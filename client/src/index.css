@@ -1,0 +1,336 @@
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* 全局变量：统一主题色 */
+        :root {
+            --bg-primary: #0f172a;
+            --text-primary: #ffffff;
+            --text-secondary: #cbd5e1;
+            --accent: #38bdf8;
+            --card-bg: #1a1a1a;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* 顶部导航栏 */
+        nav {
+            background-color: var(--bg-primary);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .nav-brand {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-right: 2rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--accent);
+        }
+
+        .nav-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-actions svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-secondary);
+            cursor: pointer;
+            transition: fill 0.2s;
+        }
+
+        .nav-actions svg:hover {
+            fill: var(--accent);
+        }
+
+        /* 主体容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 3rem;
+            align-items: start;
+        }
+
+        /* 左侧个人信息区 */
+        .profile-section {
+            text-align: center;
+            margin: auto;
+        }
+
+        .avatar {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1rem;
+            border: 3px solid var(--accent);
+        }
+
+        .profile-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-degree {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-school {
+            font-size: 1rem;
+            color: var(--accent);
+            margin-bottom: 1rem;
+        }
+
+        .profile-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .profile-links a {
+            color: var(--accent);
+            font-size: 1.75rem;
+            transition: color 0.2s;
+        }
+
+        .profile-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* 右侧内容区 */
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .biography h1 {
+            font-size: 2.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .biography p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 1rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        /* 兴趣列表 */
+        .interests-list {
+            list-style: none;
+        }
+
+        .interests-list li {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .interests-list li::before {
+            content: "📋";
+            color: var(--accent);
+        }
+
+        /* 教育背景 */
+        .education-list {
+            list-style: none;
+            padding-left: 0;
+            /* 清除默认内边距 */
+        }
+
+        .education-list li {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            position: relative;
+            /* 为伪元素定位做准备 */
+            padding-left: 1.8rem;
+            /* 给伪元素留出位置 */
+        }
+
+        /* 修复伪元素样式：改为绝对定位，确保图标和文字对齐 */
+        .education-list li::before {
+            content: "🎓";
+            color: var(--accent);
+            position: absolute;
+            /* 绝对定位 */
+            left: 0;
+            /* 靠左对齐 */
+            top: 0.2rem;
+            /* 垂直居中微调 */
+            font-size: 1rem;
+            /* 统一图标大小 */
+            width: 1.2rem;
+            /* 固定宽度，避免偏移 */
+            height: 1.2rem;
+            /* 固定高度 */
+            display: inline-block;
+            /* 转为行内块，确保margin/padding生效 */
+        }
+
+        .edu-degree {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .edu-school {
+            font-size: 0.9rem;
+        }
+
+        .edu-time {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        /* 作品展示区 */
+        .work-section {
+            background-color: var(--bg-primary);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .work-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .work-grid {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+
+        .work-card {
+            background-color: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .work-card:hover {
+            background-color: #252525;
+        }
+
+        .work-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .work-content {
+            flex: 1;
+        }
+
+        .work-name {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .work-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .work-arrow {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .work-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            nav {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .work-grid {
+                grid-template-columns: 1fr;
+            }
+        }

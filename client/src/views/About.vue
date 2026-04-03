@@ -7,13 +7,19 @@
         <li>
           <router-link to="/about/profile" class="menu-item">
             <span class="icon">👤</span>
-            <span class="text">我的简介</span>
+            <span class="text">关于我</span>
           </router-link>
         </li>
         <li>
           <router-link to="/about/devices" class="menu-item">
             <span class="icon">💻</span>
             <span class="text">我的设备</span>
+          </router-link>
+        </li>
+        <li>
+          <router-link to="/about/task-list" class="menu-item">
+            <span class="icon">📄</span>
+            <span class="text">任务清单</span>
           </router-link>
         </li>
         <li>

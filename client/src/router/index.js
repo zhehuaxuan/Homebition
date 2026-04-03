@@ -36,7 +36,11 @@ const routes = [
         path: 'article-list',
         name: 'ArticleList',
         component: () => import('../views/about/ArticleList.vue')
-      },    
+      },   {
+        path: 'task-list',
+        name: 'TaskList',
+        component: () => import('../views/about/Task.vue')
+      },   
       {
         path: '',
         redirect: '/about/profile'

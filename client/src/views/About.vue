@@ -28,6 +28,12 @@
             <span class="text">文章清单</span>
           </router-link>
         </li>
+        <li>
+          <router-link to="/about/tag-list" class="menu-item">
+            <span class="icon">📄</span>
+            <span class="text">标签管理</span>
+          </router-link>
+        </li>
       </ul>
     </div>
 

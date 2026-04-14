@@ -10,29 +10,29 @@
         </el-button>
       </div>
     </div>
-
     <!-- 表格容器 -->
     <el-table :data="taskList" border stripe style="width: 100%">
       <!-- 任务名称 -->
-      <el-table-column prop="name" label="任务名称" min-width="180" />
+      <el-table-column prop="title" label="任务名称" min-width="180" />
 
       <!-- 目标（包含类型、紧急度、重要性） -->
-      <el-table-column prop="dest" label="目标" min-width="260" />
+      <el-table-column prop="target" label="目标" min-width="260" />
 
       <!-- 标签 -->
-      <el-table-column label="标签" min-width="100">
+      <el-table-column prop="tags" label="标签" min-width="150">
         <template #default="scope">
-          <el-tag :type="scope.row.tag === '工作' ? 'primary' : (scope.row.tag === '学习' ? 'success' : 'info')">
-            {{ scope.row.tag }}
+          <!-- 这里必须用 scope.row.tags -->
+          <el-tag v-for="tag in scope.row.tags" :key="tag" class="mr-2">
+            {{ tag }}
           </el-tag>
         </template>
       </el-table-column>
 
       <!-- 创建时间 -->
-      <el-table-column prop="createTime" label="创建时间" min-width="160" />
+      <el-table-column prop="create_time" label="创建时间" min-width="160" />
 
       <!-- 闭环时间 -->
-      <el-table-column prop="endTime" label="闭环时间" min-width="160" />
+      <el-table-column prop="close_time" label="闭环时间" min-width="160" />
 
       <!-- 状态（进行中/已完成/待启动） -->
       <el-table-column label="状态" min-width="100">
@@ -49,9 +49,9 @@
       <!-- 操作列 -->
       <el-table-column label="操作" min-width="200" align="center">
         <template #default="scope">
-          <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
-          <el-button size="small" type="warning" @click="handleDelay(scope.row)">延期</el-button>
+          <el-button size="small" type="primary" @click="handleDetail(scope.row.id)">详情</el-button>
+          <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+          <el-button size="small" type="warning" @click="handleDelay(scope.row.id)">延期</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -102,39 +102,8 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
 
-// 定义表格数据（2条示例数据）
-const taskList = ref([
-  {
-    id: 1,
-    name: "完成项目需求文档",
-    target: {
-      type: "工作",
-      urgent: "高",
-      important: "高"
-    },
-    dest: "123",
-    tag: "工作",
-    createTime: "2026-04-01 10:30",
-    endTime: "2026-04-05 18:00",
-    status: "进行中",
-    remainDays: 3 // 模拟剩余3天
-  },
-  {
-    id: 2,
-    name: "学习 Vue3 + Element Plus 实战",
-    dest: "123",
-    target: {
-      type: "学习",
-      urgent: "中",
-      important: "高"
-    },
-    tag: "学习",
-    createTime: "2026-04-02 14:00",
-    endTime: "2026-04-10 23:59",
-    status: "待启动",
-    remainDays: 8 // 模拟剩余8天
-  }
-])
+// 定义表格数据
+const taskList = ref([])
 
 // 状态映射 Element Plus 标签类型
 const getStatusCodeType = (status) => {
@@ -152,18 +121,36 @@ const handleDetail = (row) => {
   console.log('详情数据：', row)
 }
 
-const handleDelete = (row) => {
-  ElMessage.warning(`删除任务：${row.name}`)
-  // 这里可以添加确认框逻辑
+// 删除任务
+const handleDelete = async (id) => {
+  // 确认弹窗
+  await ElMessageBox.confirm('确定要删除该任务吗？', '提示', {
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+  }).catch(() => {
+    ElMessage.info('已取消删除')
+    // 抛出错误终止执行
+    throw new Error('cancel')
+  })
+
+  try {
+    // 调用 DELETE 接口
+    await axios.delete(`/api/task/delete/${id}`)
+    ElMessage.success('删除成功')
+    // 刷新列表
+    getList()
+  } catch (err) {
+    // 取消删除不提示错误
+    if (err.message === 'cancel') return
+    ElMessage.error('删除失败：' + (err.response?.data?.message || '网络异常'))
+  }
 }
 
 const handleDelay = (row) => {
   ElMessage.primary(`申请延期任务：${row.name}`)
   // 这里可以弹出延期时间选择框
 }
-
-
-
 
 // 弹窗显示
 const taskDialogVisible = ref(false)
@@ -191,6 +178,14 @@ const handleAdd = () => {
   taskDialogVisible.value = true
 }
 
+//刷新任务列表
+const getList = ()=>{
+  loadTaskList();
+}
+
+
+
+
 // 加载标签
 const loadTagList = async () => {
   try {
@@ -200,6 +195,68 @@ const loadTagList = async () => {
     ElMessage.error('标签加载失败')
   }
 }
+
+//加载任务
+const loadTaskList = async () => {
+  try {
+    const { data } = await axios.get('/api/tasks')
+    const list = (data.list || []).map(item => {
+      // 修改状态栏
+      if (item.status === 0) item.status = '待启动'
+      else if (item.status === 1) item.status = '进行中'
+      else if (item.status === 2) item.status = '已完成'
+
+      // 显示标签
+      const tags =  loadTagsByTask(item.tags,tagList.value);
+      item.tags = tags;
+
+      item.remainDays = getRemainDays(item.create_time, item.close_time);      
+      return item
+    });
+    // 遍历拿到所有标签名
+    tagList.value.forEach(item => {
+      console.log(item) 
+    })
+    taskList.value = list
+  } catch (e) {
+    console.log(e)
+    ElMessage.error('任务加载失败')
+  }
+}
+
+// 计算剩余天数（返回整数，无小数点）
+const getRemainDays = (create_time, close_time) => {
+  // 转成时间戳
+  const start = new Date(create_time).getTime()
+  const end = new Date(close_time).getTime()
+  const now = Date.now()
+
+  // 如果已经超过闭环时间，返回 0
+  if (now >= end) return 0
+
+  // 时间差（毫秒）
+  const diff = end - now
+
+  // 毫秒 → 天数（向上取整，保证无小数）
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+
+  return days
+}
+
+const loadTagsByTask = (tagStr, tagList) => {
+  const realTagList = Array.isArray(tagList) ? tagList : []
+  let tagIds = []
+  try {
+    tagIds = JSON.parse(tagStr)
+  } catch (e) {
+    return []
+  }
+  return tagIds.map(id => {
+    const tag = realTagList.find(item => item.id == id) // == 兼容数字/字符串
+    return tag ? tag.name : id
+  })
+}
+
 
 // 关闭日期禁止选择早于创建日期
 const disabledCloseDate = (time) => {
@@ -234,14 +291,23 @@ const handleSubmitTask = async () => {
     ElMessage.success('创建成功')
     taskDialogVisible.value = false
     // 可在这里刷新任务列表
+    loadTaskList();
   } catch (err) {
     ElMessage.error('创建失败')
   }
 }
 
-onMounted(() => {
-  loadTagList()
-})
+onMounted(async () => {
+  try {
+    // 先加载标签 → 等待完成
+    await loadTagList();
+    
+    // 再加载任务 → 等待完成
+    await loadTaskList();
+  } catch (err) {
+    console.error('初始化失败', err);
+  }
+});
 </script>
 
 <style scoped>

@@ -64,6 +64,13 @@
   padding: 24px 0;
   border-radius: 12px;
   margin-right: 16px;
+  position: fixed !important; /* 强制固定定位，覆盖 Element Plus 默认样式 */
+  top: 70px; /* 顶部导航栏高度（根据你的导航栏高度调整，一般 60-64px） */
+  left: 10PX;
+  right: 10PX;
+  bottom: 0;
+  z-index: 999; /* 层级高于内容，防止被遮挡 */
+  overflow-y: auto; /* 侧边栏内容过长时，自身可滚动 */
 }
 
 .sidebar-header {
@@ -120,6 +127,8 @@
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.15); /* 极淡阴影，贴合原要求 */
   color: #e2e8f0; /* 浅灰色字体，不刺眼、干净 */
   box-sizing: border-box;
+  margin-left: 220px; /* 和侧边栏宽度一致 */
+  min-height: calc(100vh - 64px); /* 减去导航栏高度，撑满剩余高度 */
 }
 
 /* 适配二级内容页面的基础样式，确保文字不刺眼 */

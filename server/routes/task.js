@@ -13,18 +13,19 @@ router.get('/tasks', async (req, res) => {
 
 // 新增任务
 router.post('/task/add', async (req, res) => {
-  const { title, target, create_time, close_time, status, tagIds } = req.body;
+  const { title, target, create_time, close_time, status, importance, tagIds } = req.body;
   if (!title) return res.status(400).json({ message: '任务名称不能为空' });
 
   try {
-    const sql = `INSERT INTO task (title, target, create_time, close_time, tags, status) VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO task (title, target, create_time, close_time, tags, status,importance) VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await req.db.query(sql, [
       title,
       target || '',
       create_time,
       close_time,
       JSON.stringify(tagIds),
-      status || 0
+      status || 0,
+      importance
     ]);
 
     res.json({ message: '新增成功', id: result.insertId });
@@ -32,6 +33,83 @@ router.post('/task/add', async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+// 任务延期（修改闭环时间）
+router.post('/task/delay', async (req, res) => {
+  try {
+    const { id, close_time } = req.body
+
+    if (!id || !close_time) {
+      return res.status(400).json({ code: 400, message: '参数缺失' })
+    }
+
+    const [result] = await req.db.query(
+      'UPDATE task SET close_time = ? WHERE id = ?',
+      [close_time, id]
+    )
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ code: 404, message: '任务不存在' })
+    }
+
+    return res.json({ code: 200, message: '延期成功' })
+
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ code: 500, message: '服务器异常' })
+  }
+})
+
+
+// 修改任务状态
+router.post('/task/updateStatus', async (req, res) => {
+  try {
+    const { id, status } = req.body
+
+    // 1. 校验参数
+    if (!id || status === undefined) {
+      return res.status(400).json({
+        code: 400,
+        message: '参数缺失：id 和 status 不能为空'
+      })
+    }
+
+    // 2. 校验状态值（0=待启动 1=进行中 2=已完成）
+    if (![0, 1, 2].includes(status)) {
+      return res.status(400).json({
+        code: 400,
+        message: '状态值不合法'
+      })
+    }
+
+    // 3. 执行数据库更新（你用的 mysql2）
+    const [result] = await req.db.query(
+      'UPDATE task SET status = ? WHERE id = ?',
+      [status, id]
+    )
+
+    // 4. 判断是否更新成功
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        code: 404,
+        message: '任务不存在'
+      })
+    }
+
+    // 5. 返回成功
+    return res.json({
+      code: 200,
+      message: '状态修改成功'
+    })
+
+  } catch (err) {
+    console.error('更新状态失败：', err)
+    return res.status(500).json({
+      code: 500,
+      message: '服务器异常'
+    })
+  }
+})
 
 // 修改任务
 router.put('/task/update/:id', async (req, res) => {

@@ -1,88 +1,110 @@
 <template>
   <div class="page-container">
-    <!-- 顶部标题 + 新增按钮 + 刷新按钮 -->
-    <div class="header-bar">
-      <h2>任务管理</h2>
-      <div class="header-buttons">
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-        <el-button type="success" @click="getList">
-          刷新
-        </el-button>
-      </div>
+    <!-- 标题置顶 -->
+    <h2 class="page-title">任务管理</h2>
+
+    <!-- 紧凑操作栏：搜索 + 过滤 + 新增 + 刷新 同行布局 -->
+    <div class="action-bar">
+      <el-input v-model="queryParams.keyword" placeholder="搜索任务名称/目标" clearable style="width: 260px"
+        @keyup.enter="getList" />
+
+      <el-select v-model="queryParams.status" placeholder="状态过滤" clearable style="width: 150px">
+        <el-option label="待启动" value="待启动" />
+        <el-option label="进行中" value="进行中" />
+        <el-option label="已完成" value="已完成" />
+      </el-select>
+
+      <el-button type="primary" @click="getList">查询</el-button>
+      <el-button @click="resetQuery">重置</el-button>
+
+      <div class="spacer"></div>
+
+      <el-button type="primary" @click="handleAdd">新增</el-button>
+      <el-button type="success" @click="getList">刷新</el-button>
     </div>
-    <!-- 表格容器 -->
-    <el-table :data="taskList" border stripe style="width: 100%">
-      <!-- 任务名称 -->
+
+    <!-- 表格 -->
+    <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange">
       <el-table-column prop="title" label="任务名称" />
 
-      <!-- 目标（包含类型、紧急度、重要性） -->
-      <el-table-column label="目标" prop="target" min-width="120">
+      <!-- 目标列：单行省略 + hover完整内容 -->
+      <el-table-column label="目标" prop="target" min-width="160">
         <template #default="scope">
-          <!-- 关键：加个样式保留换行 -->
-          <div style="white-space: pre-wrap; word-break: break-all">
-            {{ scope.row.target }}
+          <el-tooltip placement="top-start" :width="360" effect="light" :disabled="!scope.row.target">
+            <template #content>
+              <pre style="margin:0; white-space:pre-wrap; font-size:12px;">{{ scope.row.target }}</pre>
+            </template>
+            <div class="single-line-ellipsis">
+              {{ scope.row.target }}
+            </div>
+          </el-tooltip>
+        </template>
+      </el-table-column>
+
+      <!-- 重要性 排序 -->
+      <el-table-column prop="importance" label="重要性" sortable :sort-method="sortImportance">
+        <template #default="scope">
+          <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
+        </template>
+      </el-table-column>
+
+      <el-table-column prop="tagsShow" label="标签" min-width="150">
+        <template #default="scope">
+          <div class="tag-list">
+            <el-tag v-for="tag in scope.row.tagsShow" :key="tag" size="small" class="custom-tag">
+              {{ tag }}
+            </el-tag>
           </div>
         </template>
       </el-table-column>
 
-      <!-- 重要性 -->
-      <el-table-column prop="importance" label="重要性">
-        <template #default="scope">
-          <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">
-            {{ scope.row.importance }}
-          </el-tag>
-        </template>
-      </el-table-column>
-
-      <!-- 标签 -->
-      <el-table-column prop="tags" label="标签" min-width="150">
-        <template #default="scope">
-          <el-tag v-for="tag in scope.row.tags" :key="tag" class="mr-2">
-            {{ tag }}
-          </el-tag>
-        </template>
-      </el-table-column>
-
-      <!-- 创建时间 -->
       <el-table-column prop="create_time" label="开始日期" />
 
-      <!-- 闭环时间 -->
-      <el-table-column prop="close_time" label="闭环日期" />
+      <!-- 闭环日期 排序 -->
+      <el-table-column prop="close_time" label="闭环日期" sortable :sort-method="sortDate" />
 
-      <!-- 状态（进行中/已完成/待启动） -->
-      <el-table-column label="状态">
+      <!-- 状态 排序 -->
+      <el-table-column prop="status" label="状态" sortable :sort-method="sortStatus">
         <template #default="scope">
-          <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">
-            {{ scope.row.status }}
-          </el-tag>
+          <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
 
-      <!-- 剩余时间 -->
-      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="90" />
+      <!-- 剩余时间 排序 -->
+      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" />
 
       <!-- 操作列 -->
-      <el-table-column label="操作" min-width="200" align="center">
+      <el-table-column label="操作" width="200" align="center">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
-          <!-- 修改状态按钮 -->
-          <el-button size="small" type="success" @click="openStatusDialog(scope.row)">修改状态</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
-          <el-button size="small" type="warning" @click="openDelayDialog(scope.row)">延期</el-button>
+          <el-button size="small" type="warning" @click="handleEdit(scope.row)">修改</el-button>
+
+          <el-dropdown @command="(cmd) => handleMoreAction(cmd, scope.row)">
+            <el-button size="small" type="info" text>
+              更多
+              <el-icon class="el-icon--right">
+                <ArrowDown />
+              </el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="status">修改状态</el-dropdown-item>
+                <el-dropdown-item command="delay">延期</el-dropdown-item>
+                <el-dropdown-item command="delete" divided type="danger">删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
   </div>
 
-  <!-- 创建任务弹窗 -->
-  <el-dialog v-model="taskDialogVisible" title="创建任务" width="600px">
+  <!-- 创建/修改弹窗 -->
+  <el-dialog v-model="taskDialogVisible" :title="isEdit ? '修改任务' : '创建任务'" width="600px">
     <el-form :model="taskForm" ref="taskFormRef" label-width="85px" class="task-form">
-      <!-- 任务名称 -->
       <el-form-item label="任务名称" required>
         <el-input v-model="taskForm.title" placeholder="请输入任务名称" style="width: 100%" />
       </el-form-item>
-
-      <!-- 重要性 新增下拉框 -->
       <el-form-item label="重要性" required>
         <el-select v-model="taskForm.importance" placeholder="请选择重要性" style="width: 100%">
           <el-option label="普通" value="普通" />
@@ -92,40 +114,30 @@
           <el-option label="至关重要" value="至关重要" />
         </el-select>
       </el-form-item>
-
-      <!-- 目标 -->
       <el-form-item label="目标">
         <el-input v-model="taskForm.target" type="textarea" rows="3" placeholder="请输入任务目标" style="width: 100%" />
       </el-form-item>
-
-      <!-- 创建日期 -->
       <el-form-item label="创建日期" required>
         <el-date-picker v-model="taskForm.create_time" type="date" placeholder="选择创建日期"
           value-format="YYYY-MM-DD HH:mm:ss" style="width: 100%" />
       </el-form-item>
-
-      <!-- 关闭日期 -->
       <el-form-item label="关闭日期" required>
         <el-date-picker v-model="taskForm.close_time" type="date" placeholder="选择关闭日期"
           value-format="YYYY-MM-DD HH:mm:ss" :disabled-date="disabledCloseDate" style="width: 100%" />
       </el-form-item>
-
-      <!-- 标签 多选 -->
       <el-form-item label="标签" required>
         <el-select v-model="taskForm.tagIds" multiple placeholder="请选择标签" style="width: 100%">
           <el-option v-for="item in tagList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
       </el-form-item>
     </el-form>
-
     <template #footer>
       <el-button @click="taskDialogVisible = false">取消</el-button>
-      <el-button type="primary" @click="handleSubmitTask">确认创建</el-button>
+      <el-button type="primary" @click="handleSubmitTask">确认</el-button>
     </template>
   </el-dialog>
 
-
-  <!-- 修改状态弹窗（新增） -->
+  <!-- 修改状态弹窗 -->
   <el-dialog v-model="statusDialogVisible" title="修改任务状态" width="500px">
     <el-form :model="statusForm" label-width="80px" style="margin-top: 10px;">
       <el-form-item label="当前状态">
@@ -139,15 +151,13 @@
         </el-select>
       </el-form-item>
     </el-form>
-
     <template #footer>
       <el-button @click="statusDialogVisible = false">取消</el-button>
       <el-button type="primary" @click="handleUpdateStatus">确认修改</el-button>
     </template>
   </el-dialog>
 
-
-  <!-- 延期弹窗（新增） -->
+  <!-- 延期弹窗 -->
   <el-dialog v-model="delayDialogVisible" title="任务延期" width="550px">
     <el-form label-width="100px">
       <el-form-item label="当前闭环时间">
@@ -159,33 +169,70 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="delayDialogVisible = false">取消</el-button>
+      <el-button @click="delayDialogVisible.value = false">取消</el-button>
       <el-button type="primary" @click="handleSubmitDelay">确认延期</el-button>
     </template>
   </el-dialog>
-
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 
-// 定义表格数据
 const taskList = ref([])
+const statusDialogVisible = ref(false)
+const taskDialogVisible = ref(false)
+const delayDialogVisible = ref(false)
+const taskFormRef = ref(null)
+const isEdit = ref(false)
+const currentTaskId = ref(null)
 
-// 状态映射 Element Plus 标签类型
-const getStatusCodeType = (status) => {
-  const map = {
-    '进行中': 'primary',
-    '已完成': 'success',
-    '待启动': 'info'
+const taskForm = reactive({
+  title: '',
+  importance: '',
+  target: '',
+  create_time: '',
+  close_time: '',
+  tagIds: []
+})
+
+const statusForm = reactive({ taskId: null, currentStatus: '', newStatus: '' })
+const delayForm = reactive({ taskId: null, oldCloseTime: '', newCloseTime: '' })
+const tagList = ref([])
+
+// 查询条件
+const queryParams = reactive({
+  keyword: '',
+  status: ''
+})
+
+// 前端过滤列表
+const filteredList = computed(() => {
+  let data = [...taskList.value]
+  // 名称+目标模糊搜索
+  if (queryParams.keyword) {
+    const kw = queryParams.keyword.toLowerCase()
+    data = data.filter(item =>
+      item.title?.toLowerCase().includes(kw) ||
+      item.target?.toLowerCase().includes(kw)
+    )
   }
+  // 状态过滤
+  if (queryParams.status) {
+    data = data.filter(item => item.status === queryParams.status)
+  }
+  return data
+})
+
+// 状态标签颜色
+const getStatusCodeType = status => {
+  const map = { '进行中': 'primary', '已完成': 'success', '待启动': 'info' }
   return map[status] || 'default'
 }
 
-// 重要性标签颜色映射
-const getImportanceTagType = (importance) => {
+const getImportanceTagType = importance => {
   const map = {
     '普通': 'info',
     '次要': '',
@@ -196,252 +243,187 @@ const getImportanceTagType = (importance) => {
   return map[importance] || 'info'
 }
 
-// 操作事件
-const handleDetail = (row) => {
+// 详情
+const handleDetail = row => {
   ElMessage.info(`查看任务：${row.title}`)
-  console.log('详情数据：', row)
 }
 
-// 删除任务
-const handleDelete = async (id) => {
-  await ElMessageBox.confirm('确定要删除该任务吗？', '提示', {
-    type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-  }).catch(() => {
-    ElMessage.info('已取消删除')
+// 删除
+const handleDelete = async id => {
+  await ElMessageBox.confirm('确定删除？', '提示', { type: 'warning' }).catch(() => {
     throw new Error('cancel')
   })
-
-  try {
-    await axios.delete(`/api/task/delete/${id}`)
-    ElMessage.success('删除成功')
-    getList()
-  } catch (err) {
-    if (err.message === 'cancel') return
-    ElMessage.error('删除失败：' + (err.response?.data?.message || '网络异常'))
-  }
+  await axios.delete(`/api/task/delete/${id}`)
+  ElMessage.success('删除成功')
+  getList()
 }
 
-// ================== 新增：修改状态功能 ==================
-const statusDialogVisible = ref(false)
-const statusForm = reactive({
-  taskId: null,
-  currentStatus: '',
-  newStatus: ''
-})
+// 更多操作下拉
+const handleMoreAction = (cmd, row) => {
+  if (cmd === 'status') openStatusDialog(row)
+  if (cmd === 'delay') openDelayDialog(row)
+  if (cmd === 'delete') handleDelete(row.id)
+}
 
-// 打开状态弹窗
-const openStatusDialog = (row) => {
+// 修改状态
+const openStatusDialog = row => {
   statusForm.taskId = row.id
   statusForm.currentStatus = row.status
   statusForm.newStatus = row.status
   statusDialogVisible.value = true
 }
-
-// 提交修改状态
 const handleUpdateStatus = async () => {
-  if (!statusForm.newStatus) {
-    return ElMessage.warning('请选择状态')
-  }
-
-  // 文字转数字状态
-  let status = 0
-  if (statusForm.newStatus === '进行中') status = 1
-  if (statusForm.newStatus === '已完成') status = 2
-
-  try {
-    await axios.post('/api/task/updateStatus', {
-      id: statusForm.taskId,
-      status: status
-    })
-    ElMessage.success('状态修改成功')
-    statusDialogVisible.value = false
-    loadTaskList()
-  } catch (e) {
-    ElMessage.error('修改失败')
-  }
+  if (!statusForm.newStatus) return ElMessage.warning('请选择状态')
+  const statusMap = { '待启动': 0, '进行中': 1, '已完成': 2 }
+  const status = statusMap[statusForm.newStatus]
+  await axios.post('/api/task/updateStatus', { id: statusForm.taskId, status })
+  ElMessage.success('状态修改成功')
+  statusDialogVisible.value = false
+  getList()
 }
 
-// 弹窗显示
-const taskDialogVisible = ref(false)
-const taskFormRef = ref(null)
-
-// 表单数据 ✅ 增加了 importance
-const taskForm = reactive({
-  title: '',
-  importance: '', // 重要性
-  target: '',
-  create_time: '',
-  close_time: '',
-  tagIds: []
-})
-
-// 标签列表
-const tagList = ref([])
-
-// 打开弹窗
+// 新增任务
 const handleAdd = () => {
-  taskForm.title = ''
-  taskForm.importance = '' // 重置重要性
-  taskForm.target = ''
-  taskForm.create_time = ''
-  taskForm.close_time = ''
-  taskForm.tagIds = []
+  isEdit.value = false
+  Object.assign(taskForm, {
+    title: '', importance: '', target: '', create_time: '', close_time: '', tagIds: []
+  })
   taskDialogVisible.value = true
 }
 
-//刷新任务列表
-const getList = () => {
-  loadTaskList();
-}
-
-// 加载标签
-const loadTagList = async () => {
+// 修改任务回填
+const handleEdit = (row) => {
+  isEdit.value = true
+  currentTaskId.value = row.id
+  taskForm.title = row.title || ''
+  taskForm.importance = row.importance || ''
+  taskForm.target = row.target || ''
+  taskForm.create_time = row.create_time ? row.create_time + ' 00:00:00' : ''
+  taskForm.close_time = row.close_time ? row.close_time + ' 00:00:00' : ''
   try {
-    const { data } = await axios.get('/api/tags')
-    tagList.value = data.list || []
-  } catch (e) {
-    ElMessage.error('标签加载失败')
+    taskForm.tagIds = JSON.parse(row.tags) || []
+  } catch (err) {
+    taskForm.tagIds = []
   }
+  taskDialogVisible.value = true
 }
 
-//加载任务
-const loadTaskList = async () => {
-  try {
-    const { data } = await axios.get('/api/tasks')
-    const list = (data.list || []).map(item => {
-      if (item.status === 0) item.status = '待启动'
-      else if (item.status === 1) item.status = '进行中'
-      else if (item.status === 2) item.status = '已完成'
-
-      item.tags = loadTagsByTask(item.tags, tagList.value);
-      item.create_time = dateFormatter(item.create_time);
-      item.close_time = dateFormatter(item.close_time);
-      item.remainDays = getRemainDays(item.create_time, item.close_time);
-      return item;
-    });
-    taskList.value = list
-  } catch (e) {
-    console.log(e)
-    ElMessage.error('任务加载失败')
-  }
+// 重置查询
+const resetQuery = () => {
+  queryParams.keyword = ''
+  queryParams.status = ''
 }
 
-const dateFormatter = (time) => {
-  const date = new Date(time)
-  const y = date.getFullYear()
-  const m = (date.getMonth() + 1).toString().padStart(2, '0')
-  const d = date.getDate().toString().padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
+// 获取任务列表
+const getList = async () => {
+  const { data } = await axios.get('/api/tasks')
+  taskList.value = (data.list || []).map(item => {
+    if (item.status === 0) item.status = '待启动'
+    else if (item.status === 1) item.status = '进行中'
+    else if (item.status === 2) item.status = '已完成'
 
-// 计算剩余天数
-const getRemainDays = (create_time, close_time) => {
-  const start = new Date(create_time).getTime()
-  const end = new Date(close_time).getTime()
-  const now = Date.now()
-  if (now >= end) return 0
-  const diff = end - now
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  return days
-}
-
-const loadTagsByTask = (tagStr, tagList) => {
-  const realTagList = Array.isArray(tagList) ? tagList : []
-  let tagIds = []
-  try {
-    tagIds = JSON.parse(tagStr)
-  } catch (e) {
-    return []
-  }
-  return tagIds.map(id => {
-    const tag = realTagList.find(item => item.id == id)
-    return tag ? tag.name : id
+    item.tagsShow = loadTagsByTask(item.tags, tagList.value)
+    item.create_time = dateFormatter(item.create_time)
+    item.close_time = dateFormatter(item.close_time)
+    item.remainDays = getRemainDays(item.create_time, item.close_time)
+    return item
   })
 }
 
-// 关闭日期禁止选择早于创建日期
-const disabledCloseDate = (time) => {
-  if (!taskForm.create_time) return false
-  return time.getTime() < new Date(taskForm.create_time).getTime()
+// 日期格式化
+const dateFormatter = time => {
+  const d = new Date(time)
+  return `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
 }
 
-// 提交任务 ✅ 已带上 importance
-const handleSubmitTask = async () => {
-  if (!taskForm.title) return ElMessage.warning('请输入任务名称')
-  if (!taskForm.importance) return ElMessage.warning('请选择重要性')
-  if (!taskForm.create_time) return ElMessage.warning('请选择创建日期')
-  if (!taskForm.close_time) return ElMessage.warning('请选择关闭日期')
-  if (taskForm.tagIds.length === 0) return ElMessage.warning('请选择至少一个标签')
+// 剩余天数计算
+const getRemainDays = (s, e) => {
+  const now = Date.now()
+  const end = new Date(e).getTime()
+  return now >= end ? 0 : Math.ceil((end - now) / 86400000)
+}
 
-  const create = new Date(taskForm.create_time)
-  const close = new Date(taskForm.close_time)
-  if (create >= close) {
+// 标签名称转换
+const loadTagsByTask = (tagStr, list) => {
+  try {
+    return JSON.parse(tagStr).map(id => {
+      const t = list.find(x => x.id == id)
+      return t ? t.name : id
+    })
+  } catch {
+    return []
+  }
+}
+
+// 日期禁用
+const disabledCloseDate = t => {
+  if (!taskForm.create_time) return false
+  return t.getTime() < new Date(taskForm.create_time).getTime()
+}
+
+// 提交新增/修改
+const handleSubmitTask = async () => {
+  if (!taskForm.title || !taskForm.importance || !taskForm.create_time || !taskForm.close_time || taskForm.tagIds.length === 0) {
+    return ElMessage.warning('请完善所有必填项')
+  }
+  if (new Date(taskForm.create_time) >= new Date(taskForm.close_time)) {
     return ElMessage.warning('创建时间必须小于关闭时间')
   }
 
   try {
-    await axios.post('/api/task/add', {
-      title: taskForm.title,
-      importance: taskForm.importance, // 提交重要性
-      target: taskForm.target,
-      create_time: taskForm.create_time,
-      close_time: taskForm.close_time,
-      tagIds: taskForm.tagIds,
-      status: 0
-    })
-    ElMessage.success('创建成功')
+    if (isEdit.value) {
+      await axios.post('/api/task/update', { id: currentTaskId.value, ...taskForm })
+      ElMessage.success('修改成功')
+    } else {
+      await axios.post('/api/task/add', { ...taskForm, status: 0 })
+      ElMessage.success('创建成功')
+    }
     taskDialogVisible.value = false
-    loadTaskList();
+    getList()
   } catch (err) {
-    ElMessage.error('创建失败')
+    ElMessage.error(isEdit.value ? '修改失败' : '创建失败')
   }
 }
 
-// 延期功能（新增）
-const delayDialogVisible = ref(false)
-const delayForm = reactive({
-  taskId: null,
-  oldCloseTime: '',
-  newCloseTime: ''
-})
-// 打开延期弹窗
-const openDelayDialog = (row) => {
+// 任务延期
+const openDelayDialog = row => {
   delayForm.taskId = row.id
-  console.log(row);
   delayForm.oldCloseTime = row.close_time
   delayForm.newCloseTime = row.close_time
   delayDialogVisible.value = true
 }
-// 新日期不能早于当前日期
-const disabledDelayDate = (time) => {
-  return time.getTime() < Date.now()
-}
-// 提交延期
+const disabledDelayDate = t => t.getTime() < Date.now()
 const handleSubmitDelay = async () => {
-  if (!delayForm.newCloseTime) return ElMessage.warning('请选择新闭环时间')
-  try {
-    await axios.post('/api/task/delay', {
-      id: delayForm.taskId,
-      close_time: delayForm.newCloseTime
-    })
-    ElMessage.success('延期成功')
-    delayDialogVisible.value = false
-    loadTaskList()
-  } catch (e) {
-    ElMessage.error('延期失败')
-  }
+  if (!delayForm.newCloseTime) return ElMessage.warning('请选择新日期')
+  await axios.post('/api/task/delay', { id: delayForm.taskId, close_time: delayForm.newCloseTime })
+  ElMessage.success('延期成功')
+  delayDialogVisible.value = false
+  getList()
+}
+
+// 表格排序
+const handleSortChange = () => { }
+const sortImportance = (a, b) => {
+  const weight = { '普通': 1, '次要': 2, '重要': 3, '紧急': 4, '至关重要': 5 }
+  return weight[a.importance] - weight[b.importance]
+}
+const sortStatus = (a, b) => {
+  const map = { '待启动': 0, '进行中': 1, '已完成': 2 }
+  return map[a.status] - map[b.status]
+}
+const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)
+const sortNumber = (a, b) => a.remainDays - b.remainDays
+
+// 加载标签
+const loadTagList = async () => {
+  const { data } = await axios.get('/api/tags')
+  tagList.value = data.list || []
 }
 
 onMounted(async () => {
-  try {
-    await loadTagList();
-    await loadTaskList();
-  } catch (err) {
-    console.error('初始化失败', err);
-  }
-});
+  await loadTagList()
+  await getList()
+})
 </script>
 
 <style scoped>
@@ -451,10 +433,72 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.header-bar {
+/* 标题单独一行 */
+.page-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* 紧凑操作栏：搜索+按钮全部同行 */
+.action-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* 占位弹性间距，把右边按钮挤到最右侧 */
+.spacer {
+  flex: 1;
+}
+
+/* 单元格单行省略 */
+.single-line-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+/* 标签布局间距 */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 深色表格 -> 高对比度标签 */
+:deep(.custom-tag) {
+  background-color: #409eff !important;
+  color: #fff !important;
+  border-color: #409eff !important;
+  opacity: 1 !important;
+}
+
+:deep(.custom-tag):nth-child(5n+1) {
+  background: #409eff !important;
+  color: #fff;
+}
+
+:deep(.custom-tag):nth-child(5n+2) {
+  background: #67c23a !important;
+  color: #fff;
+}
+
+:deep(.custom-tag):nth-child(5n+3) {
+  background: #e6a23c !important;
+  color: #fff;
+}
+
+:deep(.custom-tag):nth-child(5n+4) {
+  background: #f56c6c !important;
+  color: #fff;
+}
+
+:deep(.custom-tag):nth-child(5n+5) {
+  background: #909399 !important;
+  color: #fff;
 }
 </style>

@@ -1,28 +1,32 @@
 <template>
-  <div class="tag-manager-container">
-    <!-- 顶部标题 + 新增按钮 + 刷新按钮 -->
-    <div class="header-bar">
-      <h2>标签管理</h2>
-      <div class="header-buttons">
-        <el-button type="primary" @click="handleAdd">新增</el-button>
-        <el-button type="success" @click="getList">
-          刷新
-        </el-button>
-      </div>
-    </div>
+  <div class="page-container">
+    <!-- 标题置顶 -->
+    <h2 class="page-title">标签管理</h2>
 
-    <!-- 搜索栏 -->
-    <div class="search-bar">
-      <el-input v-model="searchKey" placeholder="请输入标签名称搜索" clearable style="width: 300px" @input="handleSearch" />
+    <!-- 统一操作栏：搜索 + 按钮 紧凑同行 -->
+    <div class="action-bar">
+      <el-input
+        v-model="searchKey"
+        placeholder="搜索标签名称"
+        clearable
+        style="width: 260px"
+        @keyup.enter="handleSearch"
+      />
+
+      <div class="spacer"></div>
+
+      <el-button type="primary" @click="handleAdd">新增</el-button>
+      <el-button type="success" @click="getList">刷新</el-button>
     </div>
 
     <!-- 表格 -->
     <div class="table-box">
       <el-table :data="tableData" border stripe>
         <el-table-column label="序号" prop="serialNumber" width="60" align="center" />
-        <el-table-column label="标签名称" prop="name" min-width="150" />
-        <el-table-column label="创建时间" prop="create_time" width="180" />
-        <el-table-column label="操作" width="180" align="center">
+        <el-table-column label="标签名称" prop="name" min-width="180" />
+        <!-- 🔥 格式化时间：只显示年月日，隐藏时分秒 -->
+        <el-table-column label="创建时间" prop="create_time" width="160" :formatter="formatDate" />
+        <el-table-column label="操作" width="160" align="center">
           <template #default="scope">
             <el-button link type="primary" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button link type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
@@ -33,8 +37,13 @@
 
     <!-- 分页 -->
     <div class="pagination">
-      <el-pagination v-model:current-page="pageNo" v-model:page-size="pageSize" :total="total"
-        layout="total, prev, pager, next, jumper" @size-change="handleSearch" />
+      <el-pagination
+        v-model:current-page="pageNo"
+        v-model:page-size="pageSize"
+        :total="total"
+        layout="total, prev, pager, next, jumper"
+        @size-change="handleSearch"
+      />
     </div>
 
     <!-- 新增/编辑弹窗 -->
@@ -83,46 +92,42 @@ onMounted(() => {
 const loading = ref(false) // 加载状态
 
 /**
+ * 🔥 时间格式化函数：只展示 年-月-日
+ */
+const formatDate = (row) => {
+  if (!row.create_time) return ''
+  const d = new Date(row.create_time)
+  return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`
+}
+
+/**
  * 获取标签列表 + 前端过滤
- * 规范：异常捕获、空指针保护、状态管理
  */
 const getList = async () => {
-  // 开始加载
   loading.value = true
-
   try {
-    // 1. 请求接口
     const res = await axios.get('/api/tags')
+    const list = res?.data?.list || []
 
-    // 2. 安全获取数据（空值保护）
-    const list = res?.data?.list || [] // 防止 res/data/list 为空
-
-    // 3. 前端关键词过滤 + 自动增加序号
     const filteredList = list.filter(item => {
       if (!searchKey.value) return true;
       return String(item.name || '').includes(searchKey.value.trim());
     }).map((item, index) => {
-      // 给每一项增加序号：自然数从 1 开始
       return {
         ...item,
-        serialNumber: index + 1  // 1、2、3、4...
+        serialNumber: index + 1
       };
     });
-    // 4. 赋值
+
     tableData.value = filteredList
     total.value = filteredList.length
 
   } catch (err) {
-    // 5. 统一异常处理
     console.error('获取标签列表失败：', err)
-    ElMessage.error('获取标签列表失败，请稍后重试')
-
-    // 异常时清空数据，防止页面空白
+    ElMessage.error('获取标签列表失败')
     tableData.value = []
     total.value = 0
-
   } finally {
-    // 无论成功失败，关闭加载
     loading.value = false
   }
 }
@@ -149,9 +154,7 @@ const handleEdit = (row) => {
 
 // 提交保存
 const handleSubmit = async () => {
-  console.log(form);
   const { id, name } = form;
-
   if (!name) {
     ElMessage.warning('请填写完整信息');
     return;
@@ -159,11 +162,9 @@ const handleSubmit = async () => {
 
   try {
     if (isEdit) {
-      // 编辑：调用修改接口
       await axios.put(`/api/tag/update/${id}`, { name });
       ElMessage.success('修改成功');
     } else {
-      // 新增：调用新增接口
       await axios.post('/api/tag/add', { name });
       ElMessage.success('新增成功');
     }
@@ -172,52 +173,52 @@ const handleSubmit = async () => {
     return;
   }
   dialogVisible.value = false;
-  getList(); // 刷新列表
+  getList();
 };
 
 // 删除标签
 const handleDelete = async (id) => {
-  // 确认弹窗
   await ElMessageBox.confirm('确定要删除该标签吗？', '提示', {
     type: 'warning',
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
   }).catch(() => {
     ElMessage.info('已取消删除')
-    // 抛出错误终止执行
     throw new Error('cancel')
   })
 
   try {
-    // 调用 DELETE 接口
     await axios.delete(`/api/tag/delete/${id}`)
     ElMessage.success('删除成功')
-    // 刷新列表
     getList()
   } catch (err) {
-    // 取消删除不提示错误
     if (err.message === 'cancel') return
-    ElMessage.error('删除失败：' + (err.response?.data?.message || '网络异常'))
+    ElMessage.error('删除失败')
   }
 }
-
 </script>
 
 <style scoped>
-.tag-manager-container {
+.page-container {
   padding: 20px;
-  min-height: calc(100vh - 120px);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.header-bar {
+.page-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.action-bar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
-.search-bar {
-  margin-bottom: 20px;
+.spacer {
+  flex: 1;
 }
 
 .table-box {

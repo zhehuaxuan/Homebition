@@ -34,6 +34,52 @@ router.post('/task/add', async (req, res) => {
   }
 });
 
+
+// ===================== 修改任务（完整匹配前端参数） =====================
+router.post('/task/update', async (req, res) => {
+  const { id, title, importance, target, create_time, close_time, tagIds } = req.body;
+
+  // 1. 必传参数校验
+  if (!id || !title || !importance || !create_time || !close_time) {
+    return res.status(400).json({ message: '缺少必填参数' });
+  }
+
+  try {
+    // 2. 更新任务主表
+    const updateSql = `
+      UPDATE task 
+      SET 
+        title = ?,
+        importance = ?,
+        target = ?,
+        create_time = ?,
+        close_time = ?,
+        tags=?
+        WHERE id = ?
+    `;
+    const tagsStr = JSON.stringify(tagIds);
+    const [result] = await req.db.query(updateSql, [
+      title,
+      importance,
+      target || '',
+      create_time,
+      close_time,
+      tagsStr,
+      id
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: '任务不存在' });
+    }
+
+    res.json({ message: '任务修改成功' });
+
+  } catch (err) {
+    console.error('修改任务失败：', err);
+    res.status(500).json({ message: '服务器异常：' + err.message });
+  }
+});
+
 // 任务延期（修改闭环时间）
 router.post('/task/delay', async (req, res) => {
   try {

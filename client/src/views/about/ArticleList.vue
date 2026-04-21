@@ -1,9 +1,7 @@
 <template>
   <div class="page-container">
-    <!-- 标题置顶 -->
     <h2 class="page-title">文章管理</h2>
 
-    <!-- 统一操作栏：搜索 + 按钮 同行紧凑布局 -->
     <div class="action-bar">
       <el-input
         v-model="searchTitle"
@@ -12,23 +10,17 @@
         style="width: 260px"
         @keyup.enter="getList"
       />
-
       <div class="spacer"></div>
-
       <el-button type="primary" @click="toAdd">新增</el-button>
       <el-button type="success" @click="getList">刷新</el-button>
     </div>
 
-    <!-- 表格 -->
     <div class="table-wrapper">
       <el-table :data="articleList" border stripe>
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="文章标题" prop="title" min-width="260" show-overflow-tooltip />
-        
-        <!-- 时间只显示 年月日 -->
-        <el-table-column label="创建时间" width="160" :formatter="formatDate" prop="createTime" />
-        <el-table-column label="最后修改时间" width="160" :formatter="formatDate" prop="updateTime" />
-        
+        <el-table-column label="创建时间" width="160" :formatter="formatDate" prop="create_time" />
+        <el-table-column label="最后修改时间" width="160" :formatter="formatDate" prop="last_time" />
         <el-table-column label="操作" width="120" align="center">
           <template #default="scope">
             <el-button type="primary" link @click="toEdit(scope.row.id)">编辑</el-button>
@@ -36,49 +28,51 @@
         </el-table-column>
       </el-table>
     </div>
-
-    <!-- 分页 -->
-    <div class="pagination">
-      <el-pagination
-        v-model:current-page="pageNum"
-        v-model:page-size="pageSize"
-        :total="total"
-        layout="total, prev, pager, next, jumper"
-      />
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 
 const router = useRouter()
 const searchTitle = ref('')
-const pageNum = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
 const articleList = ref([])
+const total = ref(0)
 
-// 模拟数据
-const mockData = [
-  { id: 1, title: '2025年产品规划总结', createTime: '2025-12-01 10:23:45', updateTime: '2025-12-05 16:10:22' },
-  { id: 2, title: '前端工程化最佳实践', createTime: '2025-12-02 09:15:33', updateTime: '2025-12-03 11:20:10' },
-]
+// 【修复】健壮的时间格式化，兼容所有数据库时间格式
+const formatDate = (row, column) => {
+  const time = row[column.property]
+  if (!time) return '-'
+  
+  // 标准化日期处理，无论是否带时分秒都能正确提取年月日
+  const date = new Date(time)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  
+  return `${year}-${month}-${day}`
+}
 
-// 时间格式化：只显示 年-月-日
-const formatDate = (row, col) => {
-  const val = row[col.prop]
-  if (!val) return ''
-  return val.split(' ')[0]
+// 获取文章列表
+async function getList() {
+  try {
+    const res = await axios.get('/api/article/list', {
+      params: {
+        title: searchTitle.value
+      }
+    })
+    if (res.data.code === 0) {
+      articleList.value = res.data.rows
+      total.value = res.data.total
+    }
+  } catch (err) {
+    console.error('获取文章列表失败', err)
+  }
 }
 
 onMounted(() => getList())
-function getList() {
-  const data = mockData.filter(item => !searchTitle.value || item.title.includes(searchTitle.value))
-  total.value = data.length
-  articleList.value = data
-}
 
 // 跳转到新增
 function toAdd() {
@@ -92,7 +86,6 @@ function toEdit(id) {
 </script>
 
 <style scoped>
-/* 完全统一 任务管理 / 标签管理 样式 */
 .page-container {
   padding: 20px;
   border-radius: 8px;
@@ -119,9 +112,5 @@ function toEdit(id) {
 
 .table-wrapper {
   margin-bottom: 16px;
-}
-
-.pagination {
-  text-align: right;
 }
 </style>

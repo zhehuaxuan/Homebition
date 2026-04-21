@@ -27,8 +27,12 @@ app.use(express.json());
 // 5. 加载路由（最后加载路由！）
 const tagRouter = require('./routes/tag');
 const taskRouter = require('./routes/task');
+const uploadRouter = require('./routes/upload');
+const articleRouter = require('./routes/article');
 app.use('/api', tagRouter);
 app.use('/api', taskRouter);
+app.use('/api', uploadRouter);
+app.use('/api', articleRouter);
 
 // 启动服务
 app.listen(3000, () => {

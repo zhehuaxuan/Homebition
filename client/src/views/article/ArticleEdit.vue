@@ -1,193 +1,215 @@
 <template>
-  <div class="page-container">
-    <h2 class="page-title">{{ isEdit ? '编辑文章' : '新增文章' }}</h2>
+  <div class="article-editor-container">
+    <div class="form-item">
+      <label>文章标题</label>
+      <input v-model="formData.title" type="text" placeholder="请输入文章标题" class="title-input" />
+    </div>
 
-    <el-form label-width="80px" style="max-width: 1200px; margin-top: 16px">
-      <el-form-item label="文章标题">
-        <el-input v-model="form.title" placeholder="请输入标题" class="dark-input" />
-      </el-form-item>
+    <div class="form-item">
+      <label>文章内容</label>
+      <Toolbar :editor="editor" :default-config="toolbarConfig" mode="default" style="margin-bottom: 10px" />
+      <Editor v-model="formData.content" :default-config="editorConfig" mode="default" @onCreated="onCreated"
+        class="wangeditor-box" />
+    </div>
 
-      <el-form-item label="文章内容">
-        <div class="editor-wrapper">
-          <Editor
-            v-model="form.content"
-            :defaultConfig="editorConfig"
-            mode="default"
-            style="height: 550px"
-          />
-        </div>
-      </el-form-item>
+    <div class="btn-group">
+      <el-button type="primary" @click="rollback">返回</el-button>
+      <el-button type="primary" @click="handleSubmit">保存修改</el-button>
+      <el-button @click="handlePreview">预览内容</el-button>
+    </div>
 
-      <el-form-item>
-        <el-button @click="goBack">返回</el-button>
-        <el-button @click="saveDraft">保存草稿</el-button>
-        <el-button type="primary" @click="publish">发布</el-button>
-      </el-form-item>
-    </el-form>
+    <div v-if="previewVisible" class="preview-box">
+      <h3>预览：{{ formData.title }}</h3>
+      <div v-html="formData.content" class="preview-content"></div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { Editor } from '@wangeditor/editor-for-vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router' // 加 useRoute
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import '@wangeditor/editor/dist/css/style.css'
+import axios from 'axios'
 
 const router = useRouter()
-const route = useRoute()
-const isEdit = ref(!!route.params.id)
+const route = useRoute() // 获取路由
 
-// ==========================
-// 🔥 显示菜单 + 粘贴图片自动转 Base64
-// ==========================
+const editor = ref(null)
+const articleId = ref(null) // 文章ID
+
+// 表单数据
+const formData = reactive({
+  title: '',
+  content: ''
+})
+
+const previewVisible = ref(false)
+
+// 工具栏配置
+const toolbarConfig = {
+  excludeKeys: [],
+}
+
+// 编辑器配置
 const editorConfig = {
-  placeholder: '输入文字、粘贴截图、插入表格',
-  // 👇 开启完整工具栏（恢复所有菜单）
-  toolbarKeys: [
-    'headerSelect',
-      'bold',
-      'underline',
-      'italic',
-      'through',
-      'clearStyle',
-      'color',
-      'bgColor',
-      'indent',
-      'delIndent',
-      'justifyLeft',
-      'justifyCenter',
-      'justifyRight',
-      'justifyJustify',
-      'lineHeight',
-      'insertTable',
-      'deleteTable',
-      'insertTableRow',
-      'deleteTableRow',
-      'insertTableCol',
-      'deleteTableCol',
-      'tableHeader',
-      'tableFullWidth',
-      'insertLink',
-      'editLink',
-      'unLink',
-      'viewLink',
-      'undo',
-      'redo',
-      'fullScreen'
-  ],
+  placeholder: '请输入文章内容...',
   MENU_CONF: {
     uploadImage: {
-      server: '', // 空接口
-      base64LimitSize: 10 * 1024 * 1024, // 图片最大 10M，转 Base64
-    },
-  },
-  pasteIgnoreImg: false, // 允许粘贴图片
-  pasteFilterStyle: false,
+      server: '/api/upload/image',
+      fieldName: 'file',
+      maxFileSize: 5 * 1024 * 1024,
+      base64LimitSize: 0,
+      pasteHandle: true,
+      allowedFileTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'],
+      customInsert(res, insertFn) {
+        insertFn(res.data.url)
+      }
+    }
+  }
 }
 
-const form = reactive({
-  id: '',
-  title: '',
-  content: '',
-})
+// 返回
+function rollback() {
+  router.push('/about/article-list')
+}
 
-const mockData = [
-  { id: 1, title: '2025 年产品规划总结', content: '<p>请编辑内容</p>' },
-]
+function onCreated(ed) {
+  editor.value = ed
+}
 
+// ==============================================
+// 页面加载时：根据路由 id 查询文章并回显
+// ==============================================
 onMounted(() => {
-  if (isEdit.value) {
-    const id = +route.params.id
-    const article = mockData.find(item => item.id === id)
-    if (article) Object.assign(form, article)
+  articleId.value = route.params.id
+  if (articleId.value) {
+    getArticleDetail()
   }
 })
 
-const saveDraft = () => {
-  if (!form.title) {
-    ElMessage.warning('请输入标题')
-    return
+// 查询文章详情
+async function getArticleDetail() {
+  try {
+    const res = await axios.get(`/api/article/detail/${articleId.value}`)
+    if (res.data.code === 0) {
+      formData.title = res.data.data.title
+      formData.content = res.data.data.content
+    }
+  } catch (err) {
+    console.error('获取文章详情失败', err)
+    alert('获取文章信息失败')
   }
-  ElMessage.success('草稿保存成功')
-  console.log('内容（Base64图片）：', form.content)
-  goBack()
 }
 
-const publish = () => {
-  if (!form.title) {
-    ElMessage.warning('请输入标题')
+// ==============================================
+// 提交修改（更新接口）
+// ==============================================
+async function handleSubmit() {
+  if (!formData.title.trim()) {
+    alert('请输入标题')
     return
   }
-  ElMessage.success('发布成功')
-  console.log('内容（Base64图片）：', form.content)
-  goBack()
+  if (!formData.content.trim()) {
+    alert('请输入内容')
+    return
+  }
+
+  try {
+    // 编辑 → 调用 update 接口
+    const res = await axios.post('/api/article/update', {
+      id: articleId.value,
+      title: formData.title,
+      content: formData.content
+    })
+
+    if (res.data.code === 0) {
+      alert('修改成功！')
+      rollback()
+    } else {
+      alert('修改失败：' + res.data.msg)
+    }
+  } catch (err) {
+    console.error(err)
+    alert('提交异常')
+  }
 }
 
-const goBack = () => {
-  router.push('/about/task-list')
+// 预览
+function handlePreview() {
+  previewVisible.value = true
 }
+
+// ==============================================
+// 菜单无法关闭 修复
+// ==============================================
+let closeHandler
+onMounted(() => {
+  closeHandler = () => {
+    document.querySelectorAll('.w-e-panel-container, .w-e-popover').forEach(el => {
+      el.style.display = 'none'
+    })
+  }
+  document.addEventListener('mousedown', closeHandler, true)
+})
+onUnmounted(() => {
+  document.removeEventListener('mousedown', closeHandler, true)
+})
 </script>
 
 <style scoped>
-.page-container {
+.article-editor-container {
+  max-width: 1200px;
+  margin: 30px auto;
   padding: 20px;
-  background: transparent !important;
-  box-shadow: none !important;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 0 10px #eee;
 }
 
-.page-title {
-  margin: 0 0 16px 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #fff;
+.form-item {
+  margin-bottom: 20px;
 }
 
-:deep(.el-form-item__label) {
-  color: #e2e8f0 !important;
+.form-item label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
 }
 
-:deep(.dark-input .el-input__wrapper) {
-  background: #1e293b !important;
-  box-shadow: 0 0 0 1px #475569 inset !important;
-}
-:deep(.dark-input .el-input__inner) {
-  color: #fff !important;
-}
-
-.editor-wrapper {
+.title-input {
   width: 100%;
-}
-:deep(.w-e-root) {
-  width: 100% !important;
-}
-
-/* 编辑区白色 + 黑色文字 */
-:deep(.w-e-text-container) {
-  height: 450px !important;
-  background: #ffffff !important;
-  border: 1px solid #ddd !important;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcdee3;
+  border-radius: 4px;
+  outline: none;
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
-:deep(.w-e-text),
-:deep(.w-e-text *),
-:deep(.w-e-text p),
-:deep(.w-e-text div),
-:deep(.w-e-text span) {
-  color: #000 !important;
-  font-size: 15px !important;
+.wangeditor-box {
+  border: 1px solid #dcdee3;
+  min-height: 500px;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-:deep(.w-e-placeholder) {
-  color: #999 !important;
+.btn-group {
+  margin-top: 20px;
 }
 
-/* 工具栏深色 + 白色文字 */
-:deep(.w-e-toolbar) {
-  background: #1e293b !important;
-  border: 1px solid #475569 !important;
+.preview-box {
+  margin-top: 30px;
+  padding: 20px;
+  background: #f9f9f9;
+  border-radius: 8px;
 }
-:deep(.w-e-menu) {
-  color: #fff !important;
+
+.preview-content {
+  line-height: 1.8;
+  font-size: 15px;
 }
 </style>

@@ -35,6 +35,55 @@ router.post('/task/add', async (req, res) => {
 });
 
 
+// ------------------------------
+// 1. 添加任务进展（前端提交用）
+// ------------------------------
+router.post('/task/progress/add', async (req, res) => {
+  try {
+    const { taskId, content } = req.body;
+
+    if (!taskId || !content) {
+      return res.json({ code: 400, msg: '参数缺失' });
+    }
+    // 插入 taskdetail 表
+    const [result] = await req.db.query(
+      'INSERT INTO taskdetail (task_id, content,create_time) VALUES (?, ?,? )',
+      [taskId, content,new Date()]
+    );
+
+    res.json({
+      code: 200,
+      msg: '进展提交成功',
+      data: result.insertId,
+    });
+  } catch (err) {
+    console.error(err);
+    res.json({ code: 500, msg: '提交失败' });
+  }
+});
+
+// ------------------------------
+// 2. 获取任务进展列表（详情页加载用）
+// ------------------------------
+router.get('/task/progress/:taskId', async (req, res) => {
+  try {
+    const taskId = req.params.taskId;
+
+    const [rows] = await req.db.query(
+      'SELECT id, content, create_time FROM taskdetail WHERE task_id = ? ORDER BY create_time DESC',
+      [taskId]
+    );
+
+    res.json({
+      code: 200,
+      list: rows,
+    });
+  } catch (err) {
+    console.error(err);
+    res.json({ code: 500, list: [] });
+  }
+});
+
 // ===================== 修改任务（完整匹配前端参数） =====================
 router.post('/task/update', async (req, res) => {
   const { id, title, importance, target, create_time, close_time, tagIds } = req.body;

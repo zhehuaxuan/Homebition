@@ -1,9 +1,7 @@
 <template>
   <div class="page-container">
-    <!-- 标题置顶 -->
     <h2 class="page-title">任务管理</h2>
 
-    <!-- 紧凑操作栏：搜索 + 过滤 + 新增 + 刷新 同行布局 -->
     <div class="action-bar">
       <el-input v-model="queryParams.keyword" placeholder="搜索任务名称/目标" clearable style="width: 260px"
         @keyup.enter="getList" />
@@ -23,11 +21,8 @@
       <el-button type="success" @click="getList">刷新</el-button>
     </div>
 
-    <!-- 表格 -->
     <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange">
       <el-table-column prop="title" label="任务名称" />
-
-      <!-- 目标列：单行省略 + hover完整内容 -->
       <el-table-column label="目标" prop="target" min-width="160">
         <template #default="scope">
           <el-tooltip placement="top-start" :width="360" effect="light" :disabled="!scope.row.target">
@@ -40,14 +35,11 @@
           </el-tooltip>
         </template>
       </el-table-column>
-
-      <!-- 重要性 排序 -->
       <el-table-column prop="importance" label="重要性" sortable :sort-method="sortImportance">
         <template #default="scope">
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
-
       <el-table-column prop="tagsShow" label="标签" min-width="150">
         <template #default="scope">
           <div class="tag-list">
@@ -57,23 +49,14 @@
           </div>
         </template>
       </el-table-column>
-
       <el-table-column prop="create_time" label="开始日期" />
-
-      <!-- 闭环日期 排序 -->
       <el-table-column prop="close_time" label="闭环日期" sortable :sort-method="sortDate" />
-
-      <!-- 状态 排序 -->
       <el-table-column prop="status" label="状态" sortable :sort-method="sortStatus">
         <template #default="scope">
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-
-      <!-- 剩余时间 排序 -->
       <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" />
-
-      <!-- 操作列 -->
       <el-table-column label="操作" width="200" align="center">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
@@ -98,6 +81,54 @@
       </el-table-column>
     </el-table>
   </div>
+
+  <!-- 任务详情弹窗 + 进展反馈 -->
+  <el-dialog v-model="detailVisible" title="任务详情" width="700px" append-to-body>
+    <div v-if="detailData" class="detail-box">
+      <el-descriptions :column="2" border size="small">
+        <el-descriptions-item label="任务名称">{{ detailData.title }}</el-descriptions-item>
+        <el-descriptions-item label="重要性">
+          <el-tag :type="getImportanceTagType(detailData.importance)" size="small">{{ detailData.importance }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="getStatusCodeType(detailData.status)" size="small" effect="plain">{{ detailData.status }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="剩余时间">{{ detailData.remainDays }} 天</el-descriptions-item>
+        <el-descriptions-item label="创建日期">{{ detailData.create_time }}</el-descriptions-item>
+        <el-descriptions-item label="闭环日期">{{ detailData.close_time }}</el-descriptions-item>
+        <el-descriptions-item label="标签" :span="2">
+          <el-tag v-for="t in detailData.tagsShow" :key="t" size="small" class="custom-tag">{{ t }}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="任务目标" :span="2">
+          <div style="white-space:pre-wrap; min-height:40px;">{{ detailData.target || '无' }}</div>
+        </el-descriptions-item>
+      </el-descriptions>
+
+      <!-- 历史进展 -->
+      <div class="progress-section" style="margin-top:15px;">
+        <div class="title">任务进展记录</div>
+        <div class="progress-list" v-if="progressList.length">
+          <div v-for="(item, idx) in progressList" :key="idx" class="progress-item">
+            <div class="time">{{ item.create_time }}</div>
+            <div class="content">{{ item.content }}</div>
+          </div>
+        </div>
+        <div v-else style="color:#999; padding:10px 0;">暂无进展记录</div>
+      </div>
+
+      <!-- 进展反馈输入框 -->
+      <div class="feedback-section" style="margin-top:15px;">
+        <div class="title">添加进展反馈</div>
+        <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500"
+          show-word-limit />
+      </div>
+    </div>
+
+    <template #footer>
+      <el-button @click="detailVisible = false">关闭</el-button>
+      <el-button type="primary" @click="submitProgress">提交进展</el-button>
+    </template>
+  </el-dialog>
 
   <!-- 创建/修改弹窗 -->
   <el-dialog v-model="taskDialogVisible" :title="isEdit ? '修改任务' : '创建任务'" width="600px">
@@ -169,7 +200,7 @@
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="delayDialogVisible.value = false">取消</el-button>
+      <el-button @click="delayDialogVisible = false">取消</el-button>
       <el-button type="primary" @click="handleSubmitDelay">确认延期</el-button>
     </template>
   </el-dialog>
@@ -189,6 +220,12 @@ const taskFormRef = ref(null)
 const isEdit = ref(false)
 const currentTaskId = ref(null)
 
+// 详情弹窗
+const detailVisible = ref(false)
+const detailData = ref(null)
+const progressList = ref([])
+const feedbackContent = ref('')
+
 const taskForm = reactive({
   title: '',
   importance: '',
@@ -202,16 +239,13 @@ const statusForm = reactive({ taskId: null, currentStatus: '', newStatus: '' })
 const delayForm = reactive({ taskId: null, oldCloseTime: '', newCloseTime: '' })
 const tagList = ref([])
 
-// 查询条件
 const queryParams = reactive({
   keyword: '',
   status: ''
 })
 
-// 前端过滤列表
 const filteredList = computed(() => {
   let data = [...taskList.value]
-  // 名称+目标模糊搜索
   if (queryParams.keyword) {
     const kw = queryParams.keyword.toLowerCase()
     data = data.filter(item =>
@@ -219,7 +253,6 @@ const filteredList = computed(() => {
       item.target?.toLowerCase().includes(kw)
     )
   }
-  // 状态过滤
   if (queryParams.status) {
     data = data.filter(item => item.status === queryParams.status)
   }
@@ -243,9 +276,54 @@ const getImportanceTagType = importance => {
   return map[importance] || 'info'
 }
 
-// 详情
-const handleDetail = row => {
-  ElMessage.info(`查看任务：${row.title}`)
+// 打开详情
+const handleDetail = async (row) => {
+  detailData.value = row
+  feedbackContent.value = ''
+  // 加载进展记录
+  await loadProgressList(row.id)
+  detailVisible.value = true
+}
+
+// 加载任务进展 + 时间格式化
+const loadProgressList = async (taskId) => {
+  try {
+    const { data } = await axios.get(`/api/task/progress/${taskId}`)
+    // 格式化时间
+    progressList.value = (data.list || []).map(item => {
+      item.create_time = formatDateTime(item.create_time)
+      return item
+    })
+  } catch (e) {
+    progressList.value = []
+  }
+}
+
+// 日期时间格式化函数（处理 ISO 时间）
+const formatDateTime = (time) => {
+  if (!time) return ''
+  const d = new Date(time)
+  const y = d.getFullYear()
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  const hh = d.getHours().toString().padStart(2, '0')
+  const mm = d.getMinutes().toString().padStart(2, '0')
+  const ss = d.getSeconds().toString().padStart(2, '0')
+  return `${y}-${m}-${day} ${hh}:${mm}:${ss}`
+}
+
+// 提交进展
+const submitProgress = async () => {
+  if (!feedbackContent.value.trim()) {
+    return ElMessage.warning('请输入进展内容')
+  }
+  await axios.post('/api/task/progress/add', {
+    taskId: detailData.value.id,
+    content: feedbackContent.value
+  })
+  ElMessage.success('提交成功')
+  feedbackContent.value = ''
+  loadProgressList(detailData.value.id)
 }
 
 // 删除
@@ -433,14 +511,12 @@ onMounted(async () => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-/* 标题单独一行 */
 .page-title {
   margin: 0 0 16px 0;
   font-size: 20px;
   font-weight: 600;
 }
 
-/* 紧凑操作栏：搜索+按钮全部同行 */
 .action-bar {
   display: flex;
   align-items: center;
@@ -449,12 +525,10 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
-/* 占位弹性间距，把右边按钮挤到最右侧 */
 .spacer {
   flex: 1;
 }
 
-/* 单元格单行省略 */
 .single-line-ellipsis {
   overflow: hidden;
   white-space: nowrap;
@@ -462,14 +536,40 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-/* 标签布局间距 */
 .tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-/* 深色表格 -> 高对比度标签 */
+/* 详情样式 */
+.detail-box {
+  padding: 5px;
+}
+
+.progress-section .title,
+.feedback-section .title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.progress-item {
+  padding: 8px 0px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.progress-item .time {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.progress-item .content {
+  line-height: 1.4;
+}
+
+/* 彩色标签 */
 :deep(.custom-tag) {
   background-color: #409eff !important;
   color: #fff !important;

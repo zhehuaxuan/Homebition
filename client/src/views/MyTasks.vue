@@ -5,115 +5,27 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import FullCalendar from '@fullcalendar/vue3'
 import resourcePlugin from '@fullcalendar/resource'
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline'
 import zhCn from '@fullcalendar/core/locales/zh-cn'
 import axios from 'axios'
 
-// 1. 任务列表 + 标签列表
 const taskList = ref([])
-const tagList = ref([]) // 存储接口返回的标签 {id, name}
+const tagList = ref([])
 
-// 2. 获取两个接口数据
-const fetchData = async () => {
-  try {
-    // 获取任务
-    const taskRes = await axios.get('/api/tasks')
-    taskList.value = taskRes.data.list || []
-
-    // 获取标签（关键！）
-    const tagRes = await axios.get('/api/tags')
-    tagList.value = tagRes.data.list || []
-  } catch (err) {
-    console.error('数据加载失败', err)
-  }
-}
-
-// 3. 生成日历左侧资源：显示标签 NAME，不是数字
-const resources = computed(() => {
-  return tagList.value.map(tag => ({
-    id: String(tag.id),    // 用标签ID作为资源ID
-    title: tag.name       // 显示标签名称：日常随记、AI Agent
-  }))
-})
-
-// 4. 状态图标
-const getStatusIcon = (status) => {
-  switch (status) {
-    case 0: return '⏳ '
-    case 1: return '🚀 '
-    case 2: return '✅ '
-    case 3: return '⏸️ '
-    default: return ''
-  }
-}
-
-// 5. 重要性颜色（半透明）
-const getEventColor = (importance) => {
-  switch (importance) {
-    case '普通':
-      return 'rgba(144, 147, 153, 0.25)'
-    case '次要':
-      return 'rgba(64, 158, 255, 0.25)'
-    case '重要':
-      return 'rgba(103, 194, 58, 0.25)'
-    case '紧急':
-      return 'rgba(245, 108, 108, 0.25)'
-    case '至关重要':
-      return 'rgba(230, 162, 60, 0.25)'
-    default:
-      return 'rgba(144, 147, 153, 0.25)'
-  }
-}
-
-// 6. 处理任务事件（自动匹配标签ID → 显示到对应行）
-const events = computed(() => {
-  const eventsArr = []
-
-  taskList.value.forEach(task => {
-    try {
-      // 解析任务身上的标签ID数组 [3,4]
-      const tagIds = JSON.parse(task.tags || '[]')
-      if (!tagIds.length) return
-
-      tagIds.forEach(tagId => {
-        const icon = getStatusIcon(task.status)
-
-        eventsArr.push({
-          resourceId: String(tagId), // 匹配标签ID
-          title: `${icon}${task.title}`,
-          start: dateFormatter(task.create_time),
-          end: dateFormatter(task.close_time),
-          color: getEventColor(task.importance),
-          extendedProps: {
-            id: task.id,
-            target: task.target,
-            status: task.status
-          }
-        })
-      })
-    } catch {}
-  })
-
-  return eventsArr
-})
-
-// 日期格式化
-const dateFormatter = time => {
-  const d = new Date(time)
-  return `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
-}
-
-// 日历配置
-const calendarOptions = computed(() => ({
+const calendarOptions = ref({
   plugins: [resourcePlugin, resourceTimelinePlugin],
   initialView: 'resourceTimelineMonth',
   schedulerLicenseKey: 'CC-Attribution-NonCommercial-NoDerivatives',
   locale: zhCn,
   resourceAreaWidth: '180px',
   editable: true,
+
+  eventMouseEnter(info) {
+    info.el.setAttribute('title', info.event.title)
+  },
 
   views: {
     resourceTimelineMonth: {
@@ -123,13 +35,103 @@ const calendarOptions = computed(() => ({
       }
     }
   },
+  resources: [],
+  events: []
+})
 
-  resources: resources.value,
-  events: events.value
-}))
+const fetchData = async () => {
+  try {
+    const taskRes = await axios.get('/api/tasks')
+    taskList.value = taskRes.data.list || []
+    const tagRes = await axios.get('/api/tags')
+    tagList.value = tagRes.data.list || []
+  } catch (err) {}
+}
 
-// 页面加载
+const resources = computed(() => {
+  return tagList.value.map(tag => ({
+    id: String(tag.id),
+    title: tag.name
+  }))
+})
+
+const events = computed(() => {
+  const arr = []
+  taskList.value.forEach(task => {
+    try {
+      const tagIds = JSON.parse(task.tags || '[]')
+      tagIds.forEach(tagId => {
+        const statusMap = {0:'[待启动]',1:'[进行中]',2:'[已完成]',3:'[已挂起]'}
+        const colorMap = {
+          '普通':'rgba(144,147,153)',
+          '次要':'rgba(64,158,255)',
+          '重要':'rgba(103,194,58)',
+          '紧急':'rgba(245,108,108)',
+          '至关重要':'rgba(230,162,60)'
+        }
+        arr.push({
+          resourceId: String(tagId),
+          title: `${statusMap[task.status]||''}${task.title}`,
+          start: dateFormatter(task.create_time),
+          end: dateFormatter(task.close_time),
+          color: colorMap[task.importance] || colorMap.普通,
+        })
+        console.log(arr);
+      })
+    } catch {}
+  })
+  return arr
+})
+
+watch([resources, events], () => {
+  calendarOptions.value.resources = resources.value
+  calendarOptions.value.events = events.value
+}, { immediate: true })
+
+function dateFormatter(time) {
+  const d = new Date(time)
+  return `${d.getFullYear()}-${(d.getMonth()+1+'').padStart(2,0)}-${(d.getDate()+'').padStart(2,0)}`
+}
+
 onMounted(() => {
   fetchData()
 })
 </script>
+
+<style>
+/* 左上角标题 */
+.fc-scrollgrid thead .fc-datagrid-cell-main {
+  font-size: 0 !important;
+}
+.fc-scrollgrid thead .fc-datagrid-cell-main::before {
+  content: "标签信息" !important;
+  font-size: 1rem !important;
+  font-weight: bold;
+}
+
+/* 事件不换行 + 省略号 */
+.fc-timeline-event {
+  height: 26px !important;
+  overflow: hidden !important;
+}
+.fc-event-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  line-height: 22px !important;
+  padding: 0 4px !important;
+}
+/* 行头：今天日期表头高亮 */
+.fc-timeline-header .fc-day-today {
+  background-color: #e6f7ff !important; /* 浅蓝色背景 */
+  color: #1890ff !important;              /* 蓝色文字 */
+  font-weight: bold !important;
+  border-radius: 4px !important;
+}
+
+/* 可选：今天整个日期列背景淡一点 */
+.fc-timeline-header  .fc-day-today {
+  background-color: #fafdff !important;
+}
+</style>

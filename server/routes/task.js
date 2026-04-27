@@ -170,7 +170,7 @@ router.post('/task/updateStatus', async (req, res) => {
     }
 
     // 2. 校验状态值（0=待启动 1=进行中 2=已完成）
-    if (![0, 1, 2].includes(status)) {
+    if (![0, 1, 2, 3].includes(status)) {
       return res.status(400).json({
         code: 400,
         message: '状态值不合法'

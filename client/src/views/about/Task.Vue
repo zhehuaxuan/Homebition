@@ -10,6 +10,7 @@
         <el-option label="待启动" value="待启动" />
         <el-option label="进行中" value="进行中" />
         <el-option label="已完成" value="已完成" />
+        <el-option label="挂起中" value="挂起中" />
       </el-select>
 
       <el-button type="primary" @click="getList">查询</el-button>
@@ -179,6 +180,7 @@
           <el-option label="待启动" value="待启动" />
           <el-option label="进行中" value="进行中" />
           <el-option label="已完成" value="已完成" />
+          <el-option label="挂起中" value="挂起中" />
         </el-select>
       </el-form-item>
     </el-form>
@@ -261,7 +263,7 @@ const filteredList = computed(() => {
 
 // 状态标签颜色
 const getStatusCodeType = status => {
-  const map = { '进行中': 'primary', '已完成': 'success', '待启动': 'info' }
+  const map = { '进行中': 'primary', '已完成': 'success', '待启动': 'info','挂起中':'warning' }
   return map[status] || 'default'
 }
 
@@ -352,7 +354,7 @@ const openStatusDialog = row => {
 }
 const handleUpdateStatus = async () => {
   if (!statusForm.newStatus) return ElMessage.warning('请选择状态')
-  const statusMap = { '待启动': 0, '进行中': 1, '已完成': 2 }
+  const statusMap = { '待启动': 0, '进行中': 1, '已完成': 2,'挂起中':3 }
   const status = statusMap[statusForm.newStatus]
   await axios.post('/api/task/updateStatus', { id: statusForm.taskId, status })
   ElMessage.success('状态修改成功')
@@ -399,7 +401,7 @@ const getList = async () => {
     if (item.status === 0) item.status = '待启动'
     else if (item.status === 1) item.status = '进行中'
     else if (item.status === 2) item.status = '已完成'
-
+    else if (item.status === 3) item.status = '挂起中'
     item.tagsShow = loadTagsByTask(item.tags, tagList.value)
     item.create_time = dateFormatter(item.create_time)
     item.close_time = dateFormatter(item.close_time)
@@ -486,7 +488,7 @@ const sortImportance = (a, b) => {
   return weight[a.importance] - weight[b.importance]
 }
 const sortStatus = (a, b) => {
-  const map = { '待启动': 0, '进行中': 1, '已完成': 2 }
+  const map = { '待启动': 0, '进行中': 1, '已完成': 2,'挂起中': 3 }
   return map[a.status] - map[b.status]
 }
 const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)

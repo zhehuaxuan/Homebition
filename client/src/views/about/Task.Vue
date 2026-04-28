@@ -81,6 +81,21 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- 任务统计栏 -->
+    <div class="stats-bar" style="margin-top: 16px; font-size: 14px;">
+      截止{{ today }}，当前共计任务数{{ totalAll }}个，
+      其中
+      <el-tag type="primary">进行中</el-tag>：{{ totalDoing }}个，
+      <el-tag type="info">待启动</el-tag>：{{ totalWait }}个，
+      <el-tag type="success">已完成</el-tag>：{{ totalDone }}个，
+      当前已超期任务：<span style="color:red; font-weight:bold;">{{ totalOverdue }}</span>个；
+
+      本月共计任务数{{ totalMonth }}个，
+      其中
+      <el-tag type="primary">进行中</el-tag>：{{ monthDoing }}个，
+      <el-tag type="info">待启动</el-tag>：{{ monthWait }}个，
+      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个。
+    </div>
   </div>
 
   <!-- 任务详情弹窗 + 进展反馈 -->
@@ -92,7 +107,8 @@
           <el-tag :type="getImportanceTagType(detailData.importance)" size="small">{{ detailData.importance }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="状态">
-          <el-tag :type="getStatusCodeType(detailData.status)" size="small" effect="plain">{{ detailData.status }}</el-tag>
+          <el-tag :type="getStatusCodeType(detailData.status)" size="small" effect="plain">{{ detailData.status
+          }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="剩余时间">{{ detailData.remainDays }} 天</el-descriptions-item>
         <el-descriptions-item label="创建日期">{{ detailData.create_time }}</el-descriptions-item>
@@ -209,7 +225,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
@@ -258,12 +274,30 @@ const filteredList = computed(() => {
   if (queryParams.status) {
     data = data.filter(item => item.status === queryParams.status)
   }
-  return data
+  return defaultSort(data)
 })
+
+// 默认排序规则：进行中 > 待启动 > 挂起中 > 已完成；同状态按剩余天数升序
+const defaultSort = (list) => {
+  const statusOrder = {
+    '进行中': 0,
+    '待启动': 1,
+    '挂起中': 2,
+    '已完成': 3
+  }
+  return [...list].sort((a, b) => {
+    // 先按状态优先级
+    if (statusOrder[a.status] !== statusOrder[b.status]) {
+      return statusOrder[a.status] - statusOrder[b.status]
+    }
+    // 同状态按剩余天数升序（越小越靠前）
+    return a.remainDays - b.remainDays
+  })
+}
 
 // 状态标签颜色
 const getStatusCodeType = status => {
-  const map = { '进行中': 'primary', '已完成': 'success', '待启动': 'info','挂起中':'warning' }
+  const map = { '进行中': 'primary', '已完成': 'success', '待启动': 'info', '挂起中': 'warning' }
   return map[status] || 'default'
 }
 
@@ -354,7 +388,7 @@ const openStatusDialog = row => {
 }
 const handleUpdateStatus = async () => {
   if (!statusForm.newStatus) return ElMessage.warning('请选择状态')
-  const statusMap = { '待启动': 0, '进行中': 1, '已完成': 2,'挂起中':3 }
+  const statusMap = { '待启动': 0, '进行中': 1, '已完成': 2, '挂起中': 3 }
   const status = statusMap[statusForm.newStatus]
   await axios.post('/api/task/updateStatus', { id: statusForm.taskId, status })
   ElMessage.success('状态修改成功')
@@ -405,7 +439,7 @@ const getList = async () => {
     item.tagsShow = loadTagsByTask(item.tags, tagList.value)
     item.create_time = dateFormatter(item.create_time)
     item.close_time = dateFormatter(item.close_time)
-    item.remainDays = getRemainDays(item.create_time, item.close_time)
+    item.remainDays = getRemainDays(item)
     return item
   })
 }
@@ -417,10 +451,13 @@ const dateFormatter = time => {
 }
 
 // 剩余天数计算
-const getRemainDays = (s, e) => {
+const getRemainDays = (item) => {
+  const { status, close_time } = item;
   const now = Date.now()
-  const end = new Date(e).getTime()
-  return now >= end ? 0 : Math.ceil((end - now) / 86400000)
+  const end = new Date(close_time).getTime();
+  if (now >= end && status == '已完成')
+    return "-";
+  return Math.ceil((end - now) / 86400000);
 }
 
 // 标签名称转换
@@ -488,7 +525,7 @@ const sortImportance = (a, b) => {
   return weight[a.importance] - weight[b.importance]
 }
 const sortStatus = (a, b) => {
-  const map = { '待启动': 0, '进行中': 1, '已完成': 2,'挂起中': 3 }
+  const map = { '待启动': 0, '进行中': 1, '已完成': 2, '挂起中': 3 }
   return map[a.status] - map[b.status]
 }
 const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)
@@ -504,6 +541,67 @@ onMounted(async () => {
   await loadTagList()
   await getList()
 })
+
+
+// 今天日期（xx-xx-xx）
+const today = ref('')
+
+// 全局统计
+const totalAll = ref(0)
+const totalDoing = ref(0)
+const totalWait = ref(0)
+const totalDone = ref(0)
+const totalOverdue = ref(0)
+
+// 本月统计
+const totalMonth = ref(0)
+const monthDoing = ref(0)
+const monthWait = ref(0)
+const monthDone = ref(0)
+
+// 计算统计数据
+const computeStats = computed(() => {
+  const list = filteredList.value
+  const now = Date.now()
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+
+  // 今日日期格式化
+  const d = new Date()
+  today.value = `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
+
+  // 总数统计
+  totalAll.value = list.length
+  totalDoing.value = list.filter(i => i.status === '进行中').length
+  totalWait.value = list.filter(i => i.status === '待启动').length
+  totalDone.value = list.filter(i => i.status === '已完成').length
+
+  // 超期任务：未完成 + 已过闭环时间
+  totalOverdue.value = list.filter(i => {
+    const isNotDone = i.status !== '已完成'
+    const isOver = new Date(i.close_time).getTime() < now
+    return isNotDone && isOver
+  }).length
+
+  // 本月统计
+  const monthList = list.filter(i => {
+    const createDate = new Date(i.create_time)
+    return createDate.getFullYear() === currentYear && createDate.getMonth() === currentMonth
+  })
+  totalMonth.value = monthList.length
+  monthDoing.value = monthList.filter(i => i.status === '进行中').length
+  monthWait.value = monthList.filter(i => i.status === '待启动').length
+  monthDone.value = monthList.filter(i => i.status === '已完成').length
+})
+
+// 监听列表变化自动更新统计
+watch(
+  () => filteredList.value,
+  () => {
+    computeStats.value
+  },
+  { deep: true, immediate: true }
+)
 </script>
 
 <style scoped>

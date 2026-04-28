@@ -1,5 +1,21 @@
 <template>
   <div style="padding: 20px; height: 700px;">
+    <!-- 顶部任务统计 -->
+    <div class="stats-bar" style="margin-bottom: 16px; font-size: 14px;">
+      截止{{ today }}，当前共计任务数{{ totalAll }}个，
+      其中
+      <el-tag type="primary">进行中</el-tag>：{{ totalDoing }}个，
+      <el-tag type="info">待启动</el-tag>：{{ totalWait }}个，
+      <el-tag type="success">已完成</el-tag>：{{ totalDone }}个，
+      当前已超期任务：<span style="color:red; font-weight:bold;">{{ totalOverdue }}</span>个；
+
+      本月共计任务数{{ totalMonth }}个，
+      其中
+      <el-tag type="primary">进行中</el-tag>：{{ monthDoing }}个，
+      <el-tag type="info">待启动</el-tag>：{{ monthWait }}个，
+      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个。
+    </div>
+
     <FullCalendar :options="calendarOptions" />
   </div>
 </template>
@@ -15,6 +31,7 @@ import axios from 'axios'
 const taskList = ref([])
 const tagList = ref([])
 
+// ==================== 日历配置 ====================
 const calendarOptions = ref({
   plugins: [resourcePlugin, resourceTimelinePlugin],
   initialView: 'resourceTimelineMonth',
@@ -39,6 +56,7 @@ const calendarOptions = ref({
   events: []
 })
 
+// ==================== 数据请求 ====================
 const fetchData = async () => {
   try {
     const taskRes = await axios.get('/api/tasks')
@@ -48,6 +66,7 @@ const fetchData = async () => {
   } catch (err) {}
 }
 
+// ==================== 资源（标签） ====================
 const resources = computed(() => {
   return tagList.value.map(tag => ({
     id: String(tag.id),
@@ -55,42 +74,102 @@ const resources = computed(() => {
   }))
 })
 
+// ==================== 事件（任务） ====================
 const events = computed(() => {
   const arr = []
   taskList.value.forEach(task => {
     try {
       const tagIds = JSON.parse(task.tags || '[]')
       tagIds.forEach(tagId => {
-        const statusMap = {0:'[待启动]',1:'[进行中]',2:'[已完成]',3:'[已挂起]'}
+        const statusMap = { 0: '[待启动]', 1: '[进行中]', 2: '[已完成]', 3: '[已挂起]' }
         const colorMap = {
-          '普通':'rgba(144,147,153)',
-          '次要':'rgba(64,158,255)',
-          '重要':'rgba(103,194,58)',
-          '紧急':'rgba(245,108,108)',
-          '至关重要':'rgba(230,162,60)'
+          '普通': 'rgba(144,147,153)',
+          '次要': 'rgba(64,158,255)',
+          '重要': 'rgba(103,194,58)',
+          '紧急': 'rgba(245,108,108)',
+          '至关重要': 'rgba(230,162,60)'
         }
         arr.push({
           resourceId: String(tagId),
-          title: `${statusMap[task.status]||''}${task.title}`,
+          title: `${statusMap[task.status] || ''}${task.title}`,
           start: dateFormatter(task.create_time),
           end: dateFormatter(task.close_time),
           color: colorMap[task.importance] || colorMap.普通,
         })
-        console.log(arr);
       })
     } catch {}
   })
   return arr
 })
 
-watch([resources, events], () => {
+// ==================== 统计数据 ====================
+const today = ref('')
+const totalAll = ref(0)
+const totalDoing = ref(0)
+const totalWait = ref(0)
+const totalDone = ref(0)
+const totalOverdue = ref(0)
+const totalMonth = ref(0)
+const monthDoing = ref(0)
+const monthWait = ref(0)
+const monthDone = ref(0)
+
+const computeStats = computed(() => {
+  const list = taskList.value.map(item => {
+    // 状态映射
+    if (item.status === 0) item.statusText = '待启动'
+    else if (item.status === 1) item.statusText = '进行中'
+    else if (item.status === 2) item.statusText = '已完成'
+    else if (item.status === 3) item.statusText = '挂起中'
+    // 日期格式化
+    item.create_time = dateFormatter(item.create_time)
+    item.close_time = dateFormatter(item.close_time)
+    return item
+  })
+
+  const now = Date.now()
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+
+  // 今天日期
+  const d = new Date()
+  today.value = `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
+
+  // 总数统计
+  totalAll.value = list.length
+  totalDoing.value = list.filter(i => i.statusText === '进行中').length
+  totalWait.value = list.filter(i => i.statusText === '待启动').length
+  totalDone.value = list.filter(i => i.statusText === '已完成').length
+
+  // 超期任务
+  totalOverdue.value = list.filter(i => {
+    const isNotDone = i.statusText !== '已完成'
+    const isOver = new Date(i.close_time).getTime() < now
+    return isNotDone && isOver
+  }).length
+
+  // 本月统计
+  const monthList = list.filter(i => {
+    const createDate = new Date(i.create_time)
+    return createDate.getFullYear() === currentYear && createDate.getMonth() === currentMonth
+  })
+  totalMonth.value = monthList.length
+  monthDoing.value = monthList.filter(i => i.statusText === '进行中').length
+  monthWait.value = monthList.filter(i => i.statusText === '待启动').length
+  monthDone.value = monthList.filter(i => i.statusText === '已完成').length
+})
+
+// ==================== 监听更新 ====================
+watch([resources, events, taskList], () => {
   calendarOptions.value.resources = resources.value
   calendarOptions.value.events = events.value
+  computeStats.value // 触发统计更新
 }, { immediate: true })
 
+// ==================== 工具函数 ====================
 function dateFormatter(time) {
   const d = new Date(time)
-  return `${d.getFullYear()}-${(d.getMonth()+1+'').padStart(2,0)}-${(d.getDate()+'').padStart(2,0)}`
+  return `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
 }
 
 onMounted(() => {
@@ -124,14 +203,9 @@ onMounted(() => {
 }
 /* 行头：今天日期表头高亮 */
 .fc-timeline-header .fc-day-today {
-  background-color: #e6f7ff !important; /* 浅蓝色背景 */
-  color: #1890ff !important;              /* 蓝色文字 */
+  background-color: #e6f7ff !important;
+  color: #1890ff !important;
   font-weight: bold !important;
   border-radius: 4px !important;
-}
-
-/* 可选：今天整个日期列背景淡一点 */
-.fc-timeline-header  .fc-day-today {
-  background-color: #fafdff !important;
 }
 </style>

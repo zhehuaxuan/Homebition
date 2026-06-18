@@ -13,6 +13,10 @@
         <el-option label="挂起中" value="挂起中" />
       </el-select>
 
+      <el-select v-model="queryParams.tagId" placeholder="标签过滤" clearable style="width: 150px">
+        <el-option v-for="item in tagList" :key="item.id" :label="item.name" :value="item.id" />
+      </el-select>
+
       <el-button type="primary" @click="getList">查询</el-button>
       <el-button @click="resetQuery">重置</el-button>
 
@@ -259,7 +263,8 @@ const tagList = ref([])
 
 const queryParams = reactive({
   keyword: '',
-  status: ''
+  status: '',
+  tagId: ''
 })
 
 const filteredList = computed(() => {
@@ -273,6 +278,16 @@ const filteredList = computed(() => {
   }
   if (queryParams.status) {
     data = data.filter(item => item.status === queryParams.status)
+  }
+  if (queryParams.tagId) {
+    data = data.filter(item => {
+      try {
+        const tagIds = JSON.parse(item.tags || '[]')
+        return tagIds.includes(parseInt(queryParams.tagId))
+      } catch {
+        return false
+      }
+    })
   }
   return defaultSort(data)
 })
@@ -426,6 +441,7 @@ const handleEdit = (row) => {
 const resetQuery = () => {
   queryParams.keyword = ''
   queryParams.status = ''
+  queryParams.tagId = ''
 }
 
 // 获取任务列表

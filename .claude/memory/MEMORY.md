@@ -1,0 +1,2 @@
+- [前端编码优先使用 Element Plus](frontend-element-plus-preference.md) — 保持 UI 风格一致性
+-[后端数据库]：mysql

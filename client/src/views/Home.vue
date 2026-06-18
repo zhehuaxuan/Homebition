@@ -7,8 +7,18 @@
             <h2 class="profile-name">Edword Xuan</h2>
             <p class="profile-degree">软件工程 硕士</p>
             <p class="profile-school">西南交通大学</p>
+            <div class="contact-info">
+                <div class="contact-item">
+                    <el-icon><Message /></el-icon>
+                    &nbsp;zhehuaxuan@aliyun.com
+                </div>
+                <div class="contact-item">
+                    <el-icon><Phone /></el-icon>
+                    &nbsp;13260721072
+                </div>
+            </div>
             <div class="profile-links">
-                <a href="mailto:your@email.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="mailto:zhehuaxuan@aliyun.com" title="Email"><i class="fas fa-envelope"></i></a>
                 <a href="https://github.com" target="_blank" title="GitHub"><i class="fab fa-github"></i></a>
                 <a href="#" title="CV"><i class="fas fa-file-alt"></i></a>
             </div>
@@ -17,12 +27,8 @@
         <div class="content-section">
             <div class="biography">
                 <h1>关于我</h1>
-                <p>
-                    Hi there, I am Rick Li! Currently I am on MSc program in Rootics at TU Delft, Netherland.
-                    Before this I completed my BEng in Nanjing University of Aeronautics and Astronautics. I
-                    prefer to seek PhD opportunity after my Master study. My research interests include robot
-                    perception, computer vision and autonomous system.
-                </p>
+                <div v-if="profile" v-html="profile"></div>
+                <p v-else>暂无个人介绍</p>
             </div>
 
             <div class="info-grid">
@@ -41,7 +47,7 @@
                     <h3 class="section-title">教育及求职经历</h3>
                     <ul class="education-list">
                         <li>
-                            <span class="edu-degree">软件工程师, 2017 ~2026</span>
+                            <span class="edu-degree">软件工程师, 2017 ~ 至今</span>
                             <span class="edu-school">华为技术有限公司</span>
                         </li>
                         <li>
@@ -145,3 +151,42 @@
         </div>
     </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { Message, Phone } from '@element-plus/icons-vue'
+import axios from 'axios'
+
+const profile = ref('')
+
+const fetchProfile = async () => {
+    try {
+        const res = await axios.get('/api/auth/profile')
+        if (res.data.code === 200) {
+            profile.value = res.data.data.profile
+        }
+    } catch (err) {
+        console.error('获取用户信息失败:', err)
+    }
+}
+
+onMounted(() => {
+    fetchProfile()
+})
+</script>
+
+<style scoped>
+.contact-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.contact-link {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+</style>

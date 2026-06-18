@@ -29,10 +29,15 @@ const tagRouter = require('./routes/tag');
 const taskRouter = require('./routes/task');
 const uploadRouter = require('./routes/upload');
 const articleRouter = require('./routes/article');
+const authRouter = require('./routes/auth');
 app.use('/api', tagRouter);
 app.use('/api', taskRouter);
 app.use('/api', uploadRouter);
 app.use('/api', articleRouter);
+app.use('/api', authRouter);
+
+// 6. 初始化数据库（启动时执行一次）
+authRouter.initAdmin(pool);
 
 // 启动服务
 app.listen(3000, () => {

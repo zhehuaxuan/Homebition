@@ -73,6 +73,21 @@
             fill: var(--accent);
         }
 
+        .nav-login-btn {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 0.95rem;
+            padding: 0.4rem 1rem;
+            border: 1px solid var(--accent);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .nav-login-btn:hover {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+        }
+
         /* 主体容器 */
         .container {
             max-width: 1200px;

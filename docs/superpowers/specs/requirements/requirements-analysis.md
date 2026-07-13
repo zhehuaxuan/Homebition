@@ -28,6 +28,7 @@
 | REQ-016 | 代码规范性 | 可维护性 | — | 📋 待治理 |
 | **REQ-017** | **全站移动端响应式适配** | **移动端浏览需求** | **全局 CSS + 所有页面** | **✅ 已实现** |
 | **REQ-018** | **About 子页面移动端优化** | **移动端表格操作不便** | **Task.vue + 全局 CSS** | **✅ 已实现** |
+| **REQ-019** | **布局优化：首页/关于我/投资频道** | **页面超出视口需滚动** | **index.css + Home/About/Invest** | **✅ 已实现** |
 
 ---
 
@@ -251,6 +252,7 @@ REQ-015 错误日志                               ●
 REQ-016 规范治理    ○      ○      ○      ○      ○      ○      ○
 REQ-017 移动端适配  ●      ●      ●      ●      ●      ●      ●
 REQ-018 About移动端优化                ●
+REQ-019 布局优化          ●              ●      ●
 ```
 
 - ● = 核心功能  ○ = 关联影响
@@ -321,3 +323,36 @@ REQ-018 About移动端优化                ●
 
 ### 设计链接
 - 需求文档: `docs/superpowers/requests/2026-07-13_REQ-018_about-subpage-mobile.md`
+
+---
+
+## REQ-019: 布局优化：首页/关于我/投资频道
+
+### 原始需求
+> 首页、关于我、投资频道三个页面内容超出视口高度，出现 scroll-y，需要压缩布局使一屏可展示。
+
+### 验收标准
+- [x] 首页头像缩小（200→120px）、间距压缩、友情链接紧凑
+- [x] 关于我侧边栏改为 sticky 布局，消除独立滚动
+- [x] 投资频道侧边栏改为 sticky 布局，消除独立滚动
+- [x] 内容面板与侧边栏顶部对齐
+- [x] 内容面板铺满视口高度
+
+### 实现
+
+| 修改项 | 位置 |
+|--------|------|
+| 首页头像/间距压缩 | `index.css` — 头像 120px、gap 1.5rem、info-grid gap 1rem、work-card padding 缩小 |
+| 首页个人介绍限高 | `Home.vue` — biography max-height 100px 超出隐藏 |
+| 侧边栏 sticky | `About.vue` / `Invest.vue` — `position: fixed` → `sticky`, `top: 0` |
+| 内容面板高度 | `About.vue` / `Invest.vue` — `min-height: calc(100vh - 92px)` |
+
+### Commits
+- `37e5ec0` — compress homepage layout, sidebars fixed→sticky
+- `7657854` — add align-items flex-start
+- `0354153` — sidebar top: 0
+- `503e0cd` — restore min-height for full-height background
+
+### 设计链接
+- 需求文档: `docs/superpowers/requests/2026-07-14_REQ-019_layout-optimization.md`
+- 实现计划: `docs/superpowers/plans/2026-07-14-layout-optimization-plan.md`

@@ -149,13 +149,17 @@ function getTaskColRange(task) {
   const taskEnd = dateToObj(task.close_time)
   const gridStart = calendarDays.value[0].date
   const gridEnd = calendarDays.value[41].date
-  const visStart = taskStart < gridStart ? gridStart : taskStart
-  const visEnd = taskEnd > gridEnd ? gridEnd : taskEnd
-  if (visStart > visEnd) return null
+  const monthStart = new Date(year.value, month.value, 1)
+  const monthEnd = new Date(year.value, month.value + 1, 0, 23, 59, 59)
+  if (taskEnd < monthStart || taskStart > monthEnd) return null
+  const visStart = taskStart < gridStart ? gridStart : (taskStart < monthStart ? monthStart : taskStart)
+  let clipEnd = taskEnd > monthEnd ? monthEnd : taskEnd
+  clipEnd = clipEnd > gridEnd ? gridEnd : clipEnd
+  if (visStart > clipEnd) return null
   let startIdx = -1, endIdx = -1
   for (let i = 0; i < 42; i++) {
     if (isSameDay(calendarDays.value[i].date, visStart)) startIdx = i
-    if (isSameDay(calendarDays.value[i].date, visEnd)) endIdx = i
+    if (isSameDay(calendarDays.value[i].date, clipEnd)) endIdx = i
   }
   if (startIdx === -1 || endIdx === -1) return null
   return { startIdx, span: endIdx - startIdx + 1 }
@@ -165,13 +169,21 @@ function splitIntoSegments(task, range) {
   const segs = []
   let idx = range.startIdx
   let remaining = range.span
+  let firstTag = ''
+  try {
+    const tagIds = JSON.parse(task.tags || '[]')
+    if (tagIds.length > 0) {
+      const tag = tagList.value.find(t => t.id === tagIds[0])
+      if (tag) firstTag = tag.name
+    }
+  } catch {}
   while (remaining > 0) {
     const weekEnd = (Math.floor(idx / 7) + 1) * 7
     const inWeek = Math.min(remaining, weekEnd - idx)
     segs.push({
       id: `${task.id}-${idx}`,
       title: task.title,
-      label: `【${task.importance}】【${dateFormatter(task.create_time)}-${dateFormatter(task.close_time)}】${task.title}`,
+      label: `【${firstTag}】【${task.importance}】【${dateFormatter(task.create_time)}-${dateFormatter(task.close_time)}】${task.title}`,
       status: task.status,
       importance: task.importance,
       week: Math.floor(idx / 7),
@@ -328,7 +340,7 @@ onMounted(() => { fetchData() })
 
 .view-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .month-nav { display: flex; align-items: center; gap: 8px; }
-.month-title { font-size: 18px; font-weight: 600; color: #1e293b; min-width: 120px; text-align: center; }
+.month-title { font-size: 20px; font-weight: 700; color: #ffffff; min-width: 120px; text-align: center; letter-spacing: 1px; }
 
 .month-grid { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
 .grid-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid #e2e8f0; background: #f8fafc; }

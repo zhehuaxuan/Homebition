@@ -83,18 +83,21 @@
     </div>
 
     <!-- 任务列表视图 -->
-    <div v-else class="week-list">
-      <div v-for="(item, idx) in taskList" :key="item.id" class="week-card">
-        <div class="card-top">
-          <span class="card-title">{{ item.title }}</span>
-          <el-tag :type="item.status === 1 ? 'primary' : item.status === 2 ? 'success' : 'info'" size="small" effect="plain">{{ ['待启动', '进行中', '已完成'][item.status] || '' }}</el-tag>
-        </div>
-        <div class="card-meta">
-          <span class="card-importance">{{ item.importance }}</span>
-          <span class="card-dates">{{ dateFormatter(item.create_time) }} → {{ dateFormatter(item.close_time) }}</span>
-        </div>
-        <div v-if="item.target" class="card-target">{{ item.target }}</div>
-      </div>
+    <div v-else>
+      <el-table :data="taskList" border stripe style="width:100%">
+        <el-table-column label="序号" type="index" width="60" align="center" />
+        <el-table-column prop="title" label="任务名称" min-width="160" />
+        <el-table-column prop="importance" label="重要性" width="90" />
+        <el-table-column label="状态" width="90">
+          <template #default="scope">
+            <el-tag :type="scope.row.status===1?'primary':scope.row.status===2?'success':'info'" size="small" effect="plain">{{['待启动','进行中','已完成'][scope.row.status]||''}}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="起止日期" min-width="220">
+          <template #default="scope">{{dateFormatter(scope.row.create_time)}} → {{dateFormatter(scope.row.close_time)}}</template>
+        </el-table-column>
+        <el-table-column prop="target" label="目标" min-width="180" show-overflow-tooltip />
+      </el-table>
     </div>
   </div>
 </template>

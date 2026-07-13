@@ -2,54 +2,29 @@
   <div class="about-layout">
     <!-- 手机端水平标签栏 -->
     <div class="mobile-tab-bar">
-      <router-link
-        v-for="tab in tabs"
-        :key="tab.to"
-        :to="tab.to"
-        class="mobile-tab-item"
-      >
-        <span class="mobile-tab-icon">{{ tab.icon }}</span>
-        <span class="mobile-tab-text">{{ tab.label }}</span>
+      <router-link to="/invest/enterprise" class="mobile-tab-item">
+        <span class="mobile-tab-icon">🏢</span>
+        <span class="mobile-tab-text">企业评估</span>
+      </router-link>
+      <router-link to="/invest/market" class="mobile-tab-item">
+        <span class="mobile-tab-icon">📊</span>
+        <span class="mobile-tab-text">大盘温度</span>
       </router-link>
     </div>
     <!-- 左侧导航栏 -->
     <div class="sidebar">
-      <div class="sidebar-header">关于我</div>
+      <div class="sidebar-header">投资频道</div>
       <ul class="sidebar-menu">
         <li>
-          <router-link to="/about/profile" class="menu-item">
-            <span class="icon">👤</span>
-            <span class="text">关于我</span>
+          <router-link to="/invest/enterprise" class="menu-item">
+            <span class="icon">🏢</span>
+            <span class="text">企业评估</span>
           </router-link>
         </li>
         <li>
-          <router-link to="/about/devices" class="menu-item">
-            <span class="icon">💻</span>
-            <span class="text">我的设备</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/about/task-list" class="menu-item">
-            <span class="icon">📄</span>
-            <span class="text">任务清单</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/about/article-list" class="menu-item">
-            <span class="icon">📄</span>
-            <span class="text">文章清单</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/about/tag-list" class="menu-item">
-            <span class="icon">📄</span>
-            <span class="text">标签管理</span>
-          </router-link>
-        </li>
-        <li>
-          <router-link to="/about/subscription-list" class="menu-item">
-            <span class="icon">📧</span>
-            <span class="text">订阅管理</span>
+          <router-link to="/invest/market" class="menu-item">
+            <span class="icon">📊</span>
+            <span class="text">大盘温度</span>
           </router-link>
         </li>
       </ul>
@@ -57,23 +32,10 @@
 
     <!-- 右侧内容面板 -->
     <div class="content-panel">
-      <!-- 这里一定能显示内容！ -->
       <router-view />
     </div>
   </div>
 </template>
-
-
-<script setup>
-const tabs = [
-  { to: '/about/profile', label: '关于我', icon: '👤' },
-  { to: '/about/devices', label: '设备', icon: '💻' },
-  { to: '/about/task-list', label: '任务', icon: '📄' },
-  { to: '/about/article-list', label: '文章', icon: '📄' },
-  { to: '/about/tag-list', label: '标签', icon: '📄' },
-  { to: '/about/subscription-list', label: '订阅', icon: '📧' },
-]
-</script>
 
 
 <style scoped>

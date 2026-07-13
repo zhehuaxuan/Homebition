@@ -350,7 +350,7 @@ onMounted(() => { fetchData() })
 .week-row { position: relative; border-bottom: 1px solid #f1f5f9; }
 .week-row:last-child { border-bottom: none; }
 
-.week-bg { display: grid; grid-template-columns: repeat(7, 1fr); height: 28px; }
+.week-bg { display: grid; grid-template-columns: repeat(7, 1fr); grid-auto-rows: 28px; height: 100%; }
 .day-cell { display: flex; align-items: center; justify-content: center; border-right: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; }
 .day-cell.other-month { color: #e2e8f0; }
 .day-cell.is-today { background: #eff6ff; }

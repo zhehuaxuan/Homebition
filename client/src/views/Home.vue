@@ -189,4 +189,17 @@ onMounted(() => {
     font-size: 0.9rem;
     color: var(--text-secondary);
 }
+
+@media (max-width: 480px) {
+  .avatar {
+    width: 140px !important;
+    height: 140px !important;
+  }
+  .profile-name {
+    font-size: 1.4rem !important;
+  }
+  .container {
+    padding: 1rem !important;
+  }
+}
 </style>

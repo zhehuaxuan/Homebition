@@ -388,3 +388,13 @@
         }
 
         /* 桌面端导航保持不变，手机端汉堡菜单支持已在 Index.vue 中实现 */
+
+/* FullCalendar responsive */
+@media (max-width: 768px) {
+  .fc-resource-area {
+    width: 80px !important;
+  }
+  .fc-resource-area .fc-cell-content {
+    font-size: 11px !important;
+  }
+}

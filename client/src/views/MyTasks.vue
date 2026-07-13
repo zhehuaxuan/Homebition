@@ -1,5 +1,5 @@
 <template>
-  <div style="padding: 20px; height: 700px;">
+  <div class="my-tasks-container" style="padding: 20px;">
     <!-- 顶部任务统计 -->
     <div class="stats-bar" style="margin-bottom: 16px; font-size: 14px;">
       截止{{ today }}，当前共计任务数{{ totalAll }}个，
@@ -207,5 +207,16 @@ onMounted(() => {
   color: #1890ff !important;
   font-weight: bold !important;
   border-radius: 4px !important;
+}
+
+@media (max-width: 768px) {
+  .my-tasks-container {
+    height: calc(100vh - 160px) !important;
+    padding: 10px !important;
+  }
+  .my-tasks-container .stats-bar {
+    font-size: 12px;
+    line-height: 1.8;
+  }
 }
 </style>

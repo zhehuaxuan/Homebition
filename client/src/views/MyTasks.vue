@@ -44,7 +44,10 @@
       <span>已完成 <strong>{{ monthDone }}</strong></span>
     </div>
 
-    <FullCalendar :options="calendarOptions" />
+    <!-- 日历卡片容器 -->
+    <div class="calendar-card">
+      <FullCalendar :options="calendarOptions" />
+    </div>
   </div>
 </template>
 
@@ -110,17 +113,17 @@ const events = computed(() => {
     try {
       const tagIds = JSON.parse(task.tags || '[]')
       tagIds.forEach(tagId => {
-        const statusMap = { 0: '[待启动]', 1: '[进行中]', 2: '[已完成]', 3: '[已挂起]' }
+        const statusMap = { 0: '待启动', 1: '进行中', 2: '已完成', 3: '挂起中' }
         const colorMap = {
-          '普通': 'rgba(144,147,153)',
-          '次要': 'rgba(64,158,255)',
-          '重要': 'rgba(103,194,58)',
-          '紧急': 'rgba(245,108,108)',
-          '至关重要': 'rgba(230,162,60)'
+          '普通': '#6b7280',
+          '次要': '#3b82f6',
+          '重要': '#ca8a04',
+          '紧急': '#ea580c',
+          '至关重要': '#dc2626'
         }
         arr.push({
           resourceId: String(tagId),
-          title: `${statusMap[task.status] || ''}${task.title}`,
+          title: `${statusMap[task.status]} ${task.title}`,
           start: dateFormatter(task.create_time),
           end: dateFormatter(task.close_time),
           color: colorMap[task.importance] || colorMap.普通,
@@ -207,43 +210,7 @@ onMounted(() => {
 </script>
 
 <style>
-/* 左上角标题 */
-.fc-scrollgrid thead .fc-datagrid-cell-main {
-  font-size: 0 !important;
-}
-.fc-scrollgrid thead .fc-datagrid-cell-main::before {
-  content: "标签信息" !important;
-  font-size: 1rem !important;
-  font-weight: bold;
-}
-
-/* 事件不换行 + 省略号 */
-.fc-timeline-event {
-  height: 26px !important;
-  overflow: hidden !important;
-}
-.fc-event-title {
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  display: block !important;
-  line-height: 22px !important;
-  padding: 0 4px !important;
-}
-/* 行头：今天日期表头高亮 */
-.fc-timeline-header .fc-day-today {
-  background-color: #e6f7ff !important;
-  color: #1890ff !important;
-  font-weight: bold !important;
-  border-radius: 4px !important;
-}
-
-/* 桌面端保持固定高度 */
-.my-tasks-container {
-  height: 700px;
-}
-
-/* ===== 顶部指标卡片 ===== */
+/* ===== 统计卡片 ===== */
 .stat-cards {
   display: flex;
   gap: 16px;
@@ -349,10 +316,102 @@ onMounted(() => {
   margin: 0 2px;
 }
 
+/* ===== 日历卡片容器 ===== */
+.calendar-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 16px;
+}
+
+/* ===== FullCalendar 样式覆盖 ===== */
+
+/* 左上角标签信息表头 */
+.fc-scrollgrid thead .fc-datagrid-cell-main {
+  font-size: 0 !important;
+}
+.fc-scrollgrid thead .fc-datagrid-cell-main::before {
+  content: "标签信息" !important;
+  font-size: 14px !important;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* 任务事件条 */
+.fc-timeline-event {
+  height: 36px !important;
+  overflow: hidden !important;
+  border-radius: 6px !important;
+  margin: 2px 4px !important;
+}
+
+.fc-event-main {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.fc-event-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  line-height: 32px !important;
+  padding: 0 8px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+/* 今天列高亮 */
+.fc-timeline-header .fc-day-today {
+  background-color: #eff6ff !important;
+}
+
+.fc-timeline-header .fc-day-today .fc-datagrid-cell-main {
+  font-weight: 700 !important;
+}
+
+.fc .fc-day-today {
+  background-color: #f8fafc !important;
+}
+
+/* 标签列行高与事件条匹配 */
+.fc-datagrid-cell.fc-resource {
+  line-height: 40px !important;
+  padding: 0 8px !important;
+}
+
+/* 去掉一些不必要的边框 */
+.fc-scrollgrid {
+  border: none !important;
+}
+
+.fc-scrollgrid td {
+  border-color: #e2e8f0 !important;
+}
+
+/* 表头样式 */
+.fc-col-header-cell {
+  padding: 4px 0 !important;
+}
+
+.fc-col-header-cell-cushion {
+  font-size: 13px !important;
+  color: #475569 !important;
+  font-weight: 500 !important;
+}
+
+/* 容器 */
+.my-tasks-container {
+  padding: 24px;
+}
+
 @media (max-width: 768px) {
   .my-tasks-container {
-    height: calc(100vh - 160px) !important;
     padding: 10px !important;
+  }
+  .my-tasks-container .stats-bar {
+    font-size: 12px;
+    line-height: 1.8;
   }
 }
 </style>

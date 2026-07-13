@@ -89,6 +89,37 @@
       </el-table-column>
     </el-table>
     </div>
+    <!-- 手机端卡片列表 -->
+    <div class="mobile-task-cards">
+      <div v-for="item in filteredList" :key="item.id" class="mobile-task-card">
+        <div class="card-title">{{ item.title }}</div>
+        <div class="card-meta">
+          <el-tag :type="getStatusCodeType(item.status)" size="small" effect="plain">{{ item.status }}</el-tag>
+          <el-tag :type="getImportanceTagType(item.importance)" size="small" style="margin-left:6px">{{ item.importance }}</el-tag>
+          <span class="card-remain" :class="{ overdue: item.remainDays < 0 && item.status !== '已完成' }">
+            {{ item.remainDays }} 天
+          </span>
+        </div>
+        <div class="card-dates">{{ item.create_time }} → {{ item.close_time }}</div>
+        <div class="card-tags" v-if="item.tagsShow && item.tagsShow.length">
+          <el-tag v-for="tag in item.tagsShow" :key="tag" size="small" class="custom-tag">{{ tag }}</el-tag>
+        </div>
+        <div class="card-actions">
+          <el-button size="small" type="primary" @click="handleDetail(item)">详情</el-button>
+          <el-button size="small" type="warning" @click="handleEdit(item)">修改</el-button>
+          <el-dropdown @command="(cmd) => handleMoreAction(cmd, item)">
+            <el-button size="small" type="info" text>更多<el-icon class="el-icon--right"><ArrowDown /></el-icon></el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="status">修改状态</el-dropdown-item>
+                <el-dropdown-item command="delay">延期</el-dropdown-item>
+                <el-dropdown-item command="delete" divided type="danger">删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </div>
     <!-- 任务统计栏 -->
     <div class="stats-bar" style="margin-top: 16px; font-size: 14px;">
       截止{{ today }}，当前共计任务数{{ totalAll }}个，
@@ -722,7 +753,10 @@ watch(
   color: #fff;
 }
 
-/* 手机端响应式 */
+/* 手机端卡片列表默认隐藏 */
+.mobile-task-cards {
+  display: none;
+}
 @media (max-width: 768px) {
   .search-input {
     width: 130px !important;
@@ -733,11 +767,67 @@ watch(
   }
 
   .table-container {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    display: none;
   }
-  .table-container .el-table {
-    min-width: auto;
+
+  .mobile-task-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mobile-task-card {
+    background: #1e293b;
+    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid #334155;
+  }
+
+  .mobile-task-card .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+
+  .mobile-task-card .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .card-remain {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-left: auto;
+  }
+  .card-remain.overdue {
+    color: #f56c6c;
+    font-weight: 600;
+  }
+
+  .mobile-task-card .card-dates {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+
+  .mobile-task-card .card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+
+  .mobile-task-card .card-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid #334155;
   }
 
   .stats-bar {

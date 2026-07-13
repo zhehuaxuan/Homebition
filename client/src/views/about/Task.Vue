@@ -26,9 +26,10 @@
       <el-button type="success" @click="getList">刷新</el-button>
     </div>
 
+    <div class="table-container">
     <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange">
       <el-table-column prop="title" label="任务名称" />
-      <el-table-column label="目标" prop="target" min-width="160">
+      <el-table-column label="目标" prop="target" min-width="160" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tooltip placement="top-start" :width="360" effect="light" :disabled="!scope.row.target">
             <template #content>
@@ -45,7 +46,7 @@
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="tagsShow" label="标签" min-width="150">
+      <el-table-column prop="tagsShow" label="标签" min-width="150" class-name="hide-on-mobile">
         <template #default="scope">
           <div class="tag-list">
             <el-tag v-for="tag in scope.row.tagsShow" :key="tag" size="small" class="custom-tag">
@@ -61,7 +62,7 @@
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" />
+      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" class-name="hide-on-mobile" />
       <el-table-column label="操作" width="200" align="center">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
@@ -85,6 +86,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
     <!-- 任务统计栏 -->
     <div class="stats-bar" style="margin-top: 16px; font-size: 14px;">
       截止{{ today }}，当前共计任务数{{ totalAll }}个，

@@ -21,6 +21,7 @@
 
     <!-- 表格 -->
     <div class="table-box">
+      <div class="table-container">
       <el-table :data="tableData" border stripe>
         <el-table-column label="序号" prop="serialNumber" width="60" align="center" />
         <el-table-column label="标签名称" prop="name" min-width="180" />
@@ -33,6 +34,7 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
     </div>
 
     <!-- 分页 -->
@@ -227,5 +229,10 @@ const handleDelete = async (id) => {
 
 .pagination {
   text-align: right;
+}
+
+@media (max-width: 768px) {
+  .action-bar { flex-wrap: wrap; }
+  .action-btn { padding: 5px 8px; font-size: 12px; }
 }
 </style>

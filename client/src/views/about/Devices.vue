@@ -4,6 +4,7 @@
     <h2 class="page-title">我的设备</h2>
 
     <!-- Element Plus 表格 -->
+    <div class="table-container">
     <el-table
       :data="tableData"
       border
@@ -17,16 +18,16 @@
       <el-table-column label="当前时间" width="160" prop="currentTime" />
       
       <!-- 自动计算的当前价格 -->
-      <el-table-column label="当前价格（¥）" width="130" align="center">
+      <el-table-column label="当前价格（¥）" width="130" align="center" class-name="hide-on-mobile">
         <template #default="scope">
           {{ calcCurrentPrice(scope.row) }}
         </template>
       </el-table-column>
 
-      <el-table-column label="过期时间" width="160" prop="expireTime" />
+      <el-table-column label="过期时间" width="160" prop="expireTime" class-name="hide-on-mobile" />
       
       <!-- 状态列 -->
-      <el-table-column label="状态" width="150" align="center">
+      <el-table-column label="状态" width="150" align="center" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tag
             :type="scope.row.status === '使用中' ? 'success' : 'warning'"
@@ -37,6 +38,7 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
   </div>
 </template>
 

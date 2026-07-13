@@ -1,88 +1,86 @@
 <template>
   <div class="page-container">
-    <h2 class="page-title">文章管理</h2>
-
-    <div class="action-bar">
-      <el-input
-        v-model="searchTitle"
-        placeholder="搜索文章标题"
-        clearable
-        style="width: 260px"
-        @keyup.enter="getList"
-      />
-      <div class="spacer"></div>
-      <el-button type="primary" @click="toAdd">新增</el-button>
-      <el-button type="success" @click="getList">刷新</el-button>
+    <div class="header-row">
+      <h2 class="page-title">文章管理</h2>
+      <el-button type="success" :loading="syncing" @click="handleSync">同步</el-button>
     </div>
 
     <div class="table-wrapper">
-      <el-table :data="articleList" border stripe>
+      <div class="table-container">
+      <el-table :data="articleList" border stripe v-loading="loading">
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column label="文章标题" prop="title" min-width="260" show-overflow-tooltip />
-        <el-table-column label="创建时间" width="160" :formatter="formatDate" prop="create_time" />
-        <el-table-column label="最后修改时间" width="160" :formatter="formatDate" prop="last_time" />
-        <el-table-column label="操作" width="120" align="center">
+        <el-table-column label="创建时间" prop="create_time" width="120" :formatter="formatDate" />
+        <el-table-column label="链接" width="100" align="center" class-name="hide-on-mobile">
           <template #default="scope">
-            <el-button type="primary" link @click="toEdit(scope.row.id)">编辑</el-button>
+            <el-button type="primary" link @click="openArticle(scope.row.url)">查看</el-button>
           </template>
         </el-table-column>
       </el-table>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import axios from 'axios'
+import { ElMessage } from 'element-plus'
 
-const router = useRouter()
-const searchTitle = ref('')
 const articleList = ref([])
-const total = ref(0)
+const loading = ref(false)
+const syncing = ref(false)
 
-// 【修复】健壮的时间格式化，兼容所有数据库时间格式
-const formatDate = (row, column) => {
-  const time = row[column.property]
-  if (!time) return '-'
-  
-  // 标准化日期处理，无论是否带时分秒都能正确提取年月日
-  const date = new Date(time)
+const formatDate = (row) => {
+  if (!row.create_time) return '-'
+  const date = new Date(row.create_time)
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  
   return `${year}-${month}-${day}`
 }
 
-// 获取文章列表
+// 从数据库获取文章列表
 async function getList() {
   try {
-    const res = await axios.get('/api/article/list', {
-      params: {
-        title: searchTitle.value
-      }
-    })
+    loading.value = true
+    const res = await axios.get('/api/article/list')
     if (res.data.code === 0) {
       articleList.value = res.data.rows
-      total.value = res.data.total
     }
   } catch (err) {
     console.error('获取文章列表失败', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 同步文章到数据库
+async function handleSync() {
+  try {
+    syncing.value = true
+    const res = await axios.post('/api/article/sync')
+    if (res.data.code === 0) {
+      ElMessage.success(`同步完成：新增 ${res.data.data.synced} 篇，跳过 ${res.data.data.skipped} 篇已存在的文章`)
+      getList()
+    } else {
+      ElMessage.error(res.data.msg || '同步失败')
+    }
+  } catch (err) {
+    console.error('同步失败', err)
+    ElMessage.error('同步失败，请稍后重试')
+  } finally {
+    syncing.value = false
+  }
+}
+
+const openArticle = (url) => {
+  if (url) {
+    window.open(url, '_blank')
   }
 }
 
 onMounted(() => getList())
-
-// 跳转到新增
-function toAdd() {
-  router.push('/article/add')
-}
-
-// 跳转到编辑
-function toEdit(id) {
-  router.push(`/article/edit/${id}`)
-}
 </script>
 
 <style scoped>
@@ -92,22 +90,17 @@ function toEdit(id) {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
 }
 
-.page-title {
-  margin: 0 0 16px 0;
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.action-bar {
+.header-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   margin-bottom: 16px;
-  flex-wrap: wrap;
 }
 
-.spacer {
-  flex: 1;
+.page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .table-wrapper {

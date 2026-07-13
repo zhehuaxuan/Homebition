@@ -90,7 +90,7 @@
         <el-table-column prop="importance" label="重要性" width="90" />
         <el-table-column label="状态" width="90">
           <template #default="scope">
-            <el-tag :type="scope.row.status===1?'primary':scope.row.status===2?'success':'info'" size="small" effect="plain">{{['待启动','进行中','已完成'][scope.row.status]||''}}</el-tag>
+            <el-tag :type="scope.row.status===1?'primary':scope.row.status===2?'success':scope.row.status===3?'warning':'info'" size="small" effect="plain">{{['待启动','进行中','已完成','挂起中'][scope.row.status]||''}}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="起止日期" min-width="220">

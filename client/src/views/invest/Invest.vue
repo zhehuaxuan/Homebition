@@ -42,8 +42,8 @@
 /* 整体布局：背景色改为#0f172a，保留清新柔和质感 */
 .about-layout {
   display: flex;
-  min-height: calc(100vh - 60px);
-  background-color: #0f172a; /* 核心背景色 */
+  align-items: flex-start;
+  background-color: #0f172a;
   padding: 16px;
   box-sizing: border-box;
 }

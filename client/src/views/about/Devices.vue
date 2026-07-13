@@ -39,6 +39,21 @@
       </el-table-column>
     </el-table>
     </div>
+
+    <!-- 手机端卡片列表 -->
+    <div class="mobile-device-cards">
+      <div v-for="item in tableData" :key="item.id" class="mobile-device-card">
+        <div class="card-title">{{ item.deviceName }}</div>
+        <div class="card-row"><span class="card-label">激活时间</span>{{ item.activateTime }}</div>
+        <div class="card-row"><span class="card-label">市场价</span>¥{{ item.originalPrice }}</div>
+        <div class="card-row"><span class="card-label">当前价值</span>¥{{ calcCurrentPrice(item) }}</div>
+        <div class="card-row"><span class="card-label">过期时间</span>{{ item.expireTime }}</div>
+        <div class="card-row">
+          <span class="card-label">状态</span>
+          <el-tag :type="item.status === '使用中' ? 'success' : 'warning'" effect="dark" size="small">{{ item.status }}</el-tag>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -111,5 +126,46 @@ const calcCurrentPrice = (row) => {
   margin: 0 0 16px 0;
   font-size: 20px;
   font-weight: 600;
+}
+
+.mobile-device-cards {
+  display: none;
+}
+
+.mobile-device-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #334155;
+  margin-bottom: 10px;
+}
+.mobile-device-card .card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+.mobile-device-card .card-row {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mobile-device-card .card-label {
+  color: #94a3b8;
+  min-width: 70px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .table-container {
+    display: none;
+  }
+  .mobile-device-cards {
+    display: flex;
+    flex-direction: column;
+  }
 }
 </style>

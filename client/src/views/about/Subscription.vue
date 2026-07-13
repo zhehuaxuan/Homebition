@@ -58,6 +58,25 @@
           </el-table-column>
         </el-table>
         </div>
+
+        <!-- 手机端订阅卡片 -->
+        <div class="mobile-subscription-cards">
+          <div v-for="item in filteredSubscriptions" :key="item.id" class="mobile-card">
+            <div class="card-title">{{ item.name }}</div>
+            <div class="card-row"><span class="card-label">类型</span>{{ item.type === 'once' ? '一次性' : '周期性' }}</div>
+            <div class="card-row"><span class="card-label">执行时间</span>{{ formatExecTime(item) }}</div>
+            <div class="card-row"><span class="card-label">推送邮箱</span>{{ item.email }}</div>
+            <div class="card-row"><span class="card-label">接口</span>{{ getApiNameById(item.api_id) }}</div>
+            <div class="card-row"><span class="card-label">状态</span>
+              <el-switch v-model="item.status" :active-value="1" :inactive-value="0" size="small"
+                @change="handleToggleSubscription(item)" />
+            </div>
+            <div class="card-actions">
+              <el-button size="small" type="primary" @click="handleEditSubscription(item)">修改</el-button>
+              <el-button size="small" type="danger" @click="handleDeleteSubscription(item.id)">删除</el-button>
+            </div>
+          </div>
+        </div>
       </el-tab-pane>
 
       <!-- 邮箱管理 -->
@@ -100,6 +119,19 @@
           </el-table-column>
         </el-table>
         </div>
+
+        <!-- 手机端邮箱卡片 -->
+        <div class="mobile-mail-cards">
+          <div v-for="item in filteredMails" :key="item.id" class="mobile-card">
+            <div class="card-title">{{ item.name }}</div>
+            <div class="card-row"><span class="card-label">地址</span>{{ item.address }}</div>
+            <div class="card-row"><span class="card-label">类型</span>{{ getMailTypeName(item.type) }}</div>
+            <div class="card-actions">
+              <el-button size="small" type="primary" @click="handleEditMail(item)">修改</el-button>
+              <el-button size="small" type="danger" @click="handleDeleteMail(item.id)">删除</el-button>
+            </div>
+          </div>
+        </div>
       </el-tab-pane>
 
       <!-- 模板管理 -->
@@ -137,6 +169,20 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
+
+        <!-- 手机端模板卡片 -->
+        <div class="mobile-template-cards">
+          <div v-for="item in filteredTemplates" :key="item.name" class="mobile-card">
+            <div class="card-title"><span class="template-name">{{ item.name }}</span></div>
+            <div class="card-row"><span class="card-label">大小</span>{{ formatTemplateSize(item.size) }}</div>
+            <div class="card-row"><span class="card-label">更新于</span>{{ formatTemplateDate(item.updated_at) }}</div>
+            <div class="card-actions">
+              <el-button size="small" @click="handleViewTemplate(item)">查看</el-button>
+              <el-button size="small" type="warning" @click="handleEditTemplate(item)">编辑</el-button>
+              <el-button size="small" type="danger" @click="handleDeleteTemplate(item.name)">删除</el-button>
+            </div>
+          </div>
         </div>
 
         <!-- 模板新增/编辑弹窗 -->
@@ -238,6 +284,20 @@
             </template>
           </el-table-column>
         </el-table>
+        </div>
+
+        <!-- 手机端接口卡片 -->
+        <div class="mobile-api-cards">
+          <div v-for="item in filteredApis" :key="item.id" class="mobile-card">
+            <div class="card-title">{{ item.name }}</div>
+            <div class="card-row" style="word-break:break-all;"><span class="card-label">路径</span><span class="api-path">{{ item.path }}</span></div>
+            <div class="card-row" v-if="item.description"><span class="card-label">描述</span>{{ item.description }}</div>
+            <div class="card-actions">
+              <el-button size="small" type="success" @click="handleTestApi(item)" :loading="item.testing">测试</el-button>
+              <el-button size="small" type="primary" @click="handleEditApi(item)">修改</el-button>
+              <el-button size="small" type="danger" @click="handleDeleteApi(item.id)">删除</el-button>
+            </div>
+          </div>
         </div>
 
         <!-- 接口新增/编辑弹窗 -->
@@ -1426,8 +1486,64 @@ onMounted(() => {
   overflow: auto;
 }
 
+.mobile-subscription-cards,
+.mobile-mail-cards,
+.mobile-template-cards,
+.mobile-api-cards {
+  display: none;
+}
+
+.mobile-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #334155;
+  margin-bottom: 10px;
+}
+.mobile-card .card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 8px;
+}
+.mobile-card .card-row {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mobile-card .card-label {
+  color: #94a3b8;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+.mobile-card .card-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 10px;
+  margin-top: 6px;
+  border-top: 1px solid #334155;
+}
+
 @media (max-width: 768px) {
-  .action-bar { flex-wrap: wrap; }
-  .action-btn { padding: 5px 8px; font-size: 12px; }
+  .table-container {
+    display: none;
+  }
+  .action-bar {
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  .mobile-subscription-cards,
+  .mobile-mail-cards,
+  .mobile-template-cards,
+  .mobile-api-cards {
+    display: flex;
+    flex-direction: column;
+  }
 }
 </style>

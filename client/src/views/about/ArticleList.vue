@@ -19,6 +19,18 @@
       </el-table>
       </div>
     </div>
+
+    <!-- 手机端卡片列表 -->
+    <div class="mobile-article-cards">
+      <div v-for="item in articleList" :key="item.id" class="mobile-article-card">
+        <div class="card-title">{{ item.title }}</div>
+        <div class="card-meta">创建于 {{ formatDate(item) }}</div>
+        <div class="card-actions">
+          <el-button type="primary" size="small" link @click="openArticle(item.url)" v-if="item.url">查看原文</el-button>
+          <span v-else style="color:#94a3b8;font-size:12px;">无链接</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -105,5 +117,43 @@ onMounted(() => getList())
 
 .table-wrapper {
   margin-bottom: 16px;
+}
+
+.mobile-article-cards {
+  display: none;
+}
+
+.mobile-article-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #334155;
+  margin-bottom: 10px;
+}
+.mobile-article-card .card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+.mobile-article-card .card-meta {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+.mobile-article-card .card-actions {
+  padding-top: 8px;
+  border-top: 1px solid #334155;
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    display: none;
+  }
+  .mobile-article-cards {
+    display: flex;
+    flex-direction: column;
+  }
 }
 </style>

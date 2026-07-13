@@ -37,6 +37,20 @@
       </div>
     </div>
 
+    <!-- 手机端卡片列表 -->
+    <div class="mobile-tag-cards">
+      <div v-for="item in tableData" :key="item.id" class="mobile-tag-card">
+        <div class="card-row">
+          <span class="card-name">{{ item.name }}</span>
+          <span class="card-time">{{ formatDate(item) }}</span>
+        </div>
+        <div class="card-actions">
+          <el-button link type="primary" size="small" @click="handleEdit(item)">编辑</el-button>
+          <el-button link type="danger" size="small" @click="handleDelete(item.id)">删除</el-button>
+        </div>
+      </div>
+    </div>
+
     <!-- 分页 -->
     <div class="pagination">
       <el-pagination
@@ -234,5 +248,48 @@ const handleDelete = async (id) => {
 @media (max-width: 768px) {
   .action-bar { flex-wrap: wrap; }
   .action-btn { padding: 5px 8px; font-size: 12px; }
+}
+
+.mobile-tag-cards {
+  display: none;
+}
+
+.mobile-tag-card {
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #334155;
+  margin-bottom: 10px;
+}
+.mobile-tag-card .card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.mobile-tag-card .card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.mobile-tag-card .card-time {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.mobile-tag-card .card-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #334155;
+}
+
+@media (max-width: 768px) {
+  .table-box {
+    display: none;
+  }
+  .mobile-tag-cards {
+    display: flex;
+    flex-direction: column;
+  }
 }
 </style>

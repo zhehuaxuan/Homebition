@@ -13,6 +13,9 @@
             --text-secondary: #cbd5e1;
             --accent: #38bdf8;
             --card-bg: #1a1a1a;
+            --page-padding: 2rem;
+            --breakpoint-mobile: 768px;
+            --breakpoint-small: 480px;
         }
 
         body {
@@ -349,3 +352,39 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ========== 全局响应式 ========== */
+
+        /* 统一页面容器 */
+        .page-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--page-padding);
+        }
+
+        /* 表格水平滚动容器 */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .table-container .el-table {
+            min-width: 600px;
+        }
+
+        /* 手机端隐藏列 */
+        @media (max-width: 768px) {
+            .hide-on-mobile .el-table__cell {
+                display: none !important;
+            }
+        }
+
+        /* Dialog 全屏展开 */
+        @media (max-width: 480px) {
+            .el-dialog {
+                width: 95vw !important;
+                max-width: 95vw !important;
+            }
+        }
+
+        /* 桌面端导航保持不变，手机端汉堡菜单支持已在 Index.vue 中实现 */

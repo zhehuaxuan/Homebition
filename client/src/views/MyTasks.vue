@@ -1,19 +1,35 @@
 <template>
   <div class="my-tasks-container" style="padding: 20px;">
-    <!-- 顶部任务统计 -->
-    <div class="stats-bar" style="margin-bottom: 16px; font-size: 14px;">
-      截止{{ today }}，当前共计任务数{{ totalAll }}个，
-      其中
-      <el-tag type="primary">进行中</el-tag>：{{ totalDoing }}个，
-      <el-tag type="info">待启动</el-tag>：{{ totalWait }}个，
-      <el-tag type="success">已完成</el-tag>：{{ totalDone }}个，
-      当前已超期任务：<span style="color:red; font-weight:bold;">{{ totalOverdue }}</span>个；
-
-      本月共计任务数{{ totalMonth }}个，
-      其中
-      <el-tag type="primary">进行中</el-tag>：{{ monthDoing }}个，
-      <el-tag type="info">待启动</el-tag>：{{ monthWait }}个，
-      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个。
+    <!-- 顶部指标卡片行 -->
+    <div class="stat-cards">
+      <div class="stat-card stat-card-total">
+        <div class="stat-card-icon"><el-icon size="24"><List /></el-icon></div>
+        <div class="stat-card-body">
+          <div class="stat-card-number">{{ totalAll }}</div>
+          <div class="stat-card-label">全部任务</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card-doing">
+        <div class="stat-card-icon"><el-icon size="24"><Loading /></el-icon></div>
+        <div class="stat-card-body">
+          <div class="stat-card-number">{{ totalDoing }}</div>
+          <div class="stat-card-label">进行中</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card-wait">
+        <div class="stat-card-icon"><el-icon size="24"><Clock /></el-icon></div>
+        <div class="stat-card-body">
+          <div class="stat-card-number">{{ totalWait }}</div>
+          <div class="stat-card-label">待启动</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card-overdue">
+        <div class="stat-card-icon"><el-icon size="24"><WarningFilled /></el-icon></div>
+        <div class="stat-card-body">
+          <div class="stat-card-number stat-card-number-danger">{{ totalOverdue }}</div>
+          <div class="stat-card-label">已超期</div>
+        </div>
+      </div>
     </div>
 
     <FullCalendar :options="calendarOptions" />
@@ -22,6 +38,7 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
+import { List, Loading, Clock, WarningFilled } from '@element-plus/icons-vue'
 import FullCalendar from '@fullcalendar/vue3'
 import resourcePlugin from '@fullcalendar/resource'
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline'
@@ -214,14 +231,93 @@ onMounted(() => {
   height: 700px;
 }
 
+/* ===== 顶部指标卡片 ===== */
+.stat-cards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  min-width: 0;
+}
+
+.stat-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-card-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stat-card-number {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #1e293b;
+}
+
+.stat-card-number-danger {
+  color: #dc2626;
+}
+
+.stat-card-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.stat-card-total {
+  background: #eef2ff;
+}
+.stat-card-total .stat-card-icon {
+  background: #6366f1;
+  color: #fff;
+}
+
+.stat-card-doing {
+  background: #f0fdf4;
+}
+.stat-card-doing .stat-card-icon {
+  background: #22c55e;
+  color: #fff;
+}
+
+.stat-card-wait {
+  background: #f8fafc;
+}
+.stat-card-wait .stat-card-icon {
+  background: #94a3b8;
+  color: #fff;
+}
+
+.stat-card-overdue {
+  background: #fef2f2;
+}
+.stat-card-overdue .stat-card-icon {
+  background: #ef4444;
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   .my-tasks-container {
     height: calc(100vh - 160px) !important;
     padding: 10px !important;
-  }
-  .my-tasks-container .stats-bar {
-    font-size: 12px;
-    line-height: 1.8;
   }
 }
 </style>

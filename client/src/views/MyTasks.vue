@@ -1,5 +1,5 @@
 <template>
-  <div class="my-tasks-container" style="padding: 20px;">
+  <div class="my-tasks-container">
     <!-- 顶部指标卡片行 -->
     <div class="stat-cards">
       <div class="stat-card stat-card-total">
@@ -408,10 +408,6 @@ onMounted(() => {
 @media (max-width: 768px) {
   .my-tasks-container {
     padding: 10px !important;
-  }
-  .my-tasks-container .stats-bar {
-    font-size: 12px;
-    line-height: 1.8;
   }
 }
 </style>

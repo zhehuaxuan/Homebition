@@ -81,6 +81,7 @@ const tabs = [
 .about-layout {
   display: flex;
   align-items: flex-start;
+  min-height: calc(100vh - 60px);
   background-color: #0f172a;
   padding: 16px;
   box-sizing: border-box;
@@ -149,6 +150,7 @@ const tabs = [
 /* 右侧内容面板：深色卡片，与导航呼应，保证内容清晰 */
 .content-panel {
   flex: 1;
+  min-height: calc(100vh - 92px);
   background: #1e293b; /* 与导航卡片一致，统一协调 */
   padding: 30px;
   border-radius: 12px;

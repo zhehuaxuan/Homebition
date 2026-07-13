@@ -74,7 +74,7 @@
               class="task-bar"
               :class="'status-' + seg.status"
               :style="weekTaskBarStyle(seg)"
-              :title="seg.title">
+              @click.stop="handleGridTaskClick(seg)">
               <span class="bar-text">{{ seg.label }}</span>
             </div>
           </div>
@@ -100,17 +100,88 @@
       </el-table>
     </div>
   </div>
+
+  <!-- 任务详情弹窗 -->
+  <el-dialog v-model="detailVisible" title="任务详情" width="700px" append-to-body>
+    <div v-if="detailData" class="detail-box">
+      <el-descriptions :column="2" border size="small">
+        <el-descriptions-item label="任务名称">{{ detailData.title }}</el-descriptions-item>
+        <el-descriptions-item label="重要性">{{ detailData.importance }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="detailData.status===1?'primary':detailData.status===2?'success':detailData.status===3?'warning':'info'" size="small" effect="plain">{{['待启动','进行中','已完成','挂起中'][detailData.status]||''}}</el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="剩余时间">{{ detailData.remainDays }} 天</el-descriptions-item>
+        <el-descriptions-item label="创建日期">{{ dateFormatter(detailData.create_time) }}</el-descriptions-item>
+        <el-descriptions-item label="闭环日期">{{ dateFormatter(detailData.close_time) }}</el-descriptions-item>
+        <el-descriptions-item label="任务目标" :span="2">
+          <div style="white-space:pre-wrap; min-height:40px;">{{ detailData.target || '无' }}</div>
+        </el-descriptions-item>
+      </el-descriptions>
+      <div style="margin-top:15px;">
+        <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进展记录</div>
+        <div v-if="progressList.length">
+          <div v-for="(item, idx) in progressList" :key="idx" style="padding:8px 0; border-bottom:1px solid #f1f5f9;">
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">{{ item.create_time }}</div>
+            <div style="font-size:13px; color:#475569; line-height:1.4;">{{ item.content }}</div>
+          </div>
+        </div>
+        <div v-else style="color:#999; padding:10px 0;">暂无进展记录</div>
+      </div>
+      <div style="margin-top:15px;">
+        <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">添加进展反馈</div>
+        <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500" show-word-limit />
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="detailVisible = false">关闭</el-button>
+      <el-button type="primary" @click="subProgress">提交进展</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { List, Loading, Clock, WarningFilled, Calendar } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
 const taskList = ref([])
 const tagList = ref([])
 const viewDate = ref(new Date())
 const viewMode = ref('month')
+const detailVisible = ref(false)
+const detailData = ref(null)
+const progressList = ref([])
+const feedbackContent = ref('')
+
+function handleGridTaskClick(seg) {
+  const task = taskList.value.find(t => t.id === parseInt(seg.id.split('-')[0]))
+  if (!task) return
+  detailData.value = { ...task }
+  feedbackContent.value = ''
+  loadProgressList(task.id)
+  detailVisible.value = true
+}
+
+async function loadProgressList(taskId) {
+  try {
+    const { data } = await axios.get('/api/task/progress/' + taskId)
+    progressList.value = (data.list || []).map(item => ({ ...item, create_time: fmtDT(item.create_time) }))
+  } catch { progressList.value = [] }
+}
+
+function fmtDT(time) {
+  if (!time) return ''
+  const d = new Date(time)
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')
+}
+
+async function subProgress() {
+  if (!feedbackContent.value.trim()) return ElMessage.warning('请输入进展内容')
+  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value })
+  ElMessage.success('提交成功')
+  feedbackContent.value = ''
+  loadProgressList(detailData.value.id)
+}
 
 const year = computed(() => viewDate.value.getFullYear())
 const month = computed(() => viewDate.value.getMonth())

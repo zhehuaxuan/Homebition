@@ -155,6 +155,7 @@ function getTaskColRange(task) {
   const visStart = taskStart < gridStart ? gridStart : (taskStart < monthStart ? monthStart : taskStart)
   let clipEnd = taskEnd > monthEnd ? monthEnd : taskEnd
   clipEnd = clipEnd > gridEnd ? gridEnd : clipEnd
+  clipEnd.setHours(0, 0, 0, 0)
   if (visStart > clipEnd) return null
   let startIdx = -1, endIdx = -1
   for (let i = 0; i < 42; i++) {

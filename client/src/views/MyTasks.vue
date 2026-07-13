@@ -44,7 +44,7 @@
       <span>已完成 <strong>{{ monthDone }}</strong></span>
     </div>
 
-    <!-- 月份导航 + 视图切换 -->
+    <!-- 月份导航 -->
     <div class="view-controls">
       <div class="month-nav">
         <el-button size="small" circle @click="changeMonth(-1)">‹</el-button>
@@ -52,14 +52,10 @@
         <el-button size="small" circle @click="changeMonth(1)">›</el-button>
         <el-button size="small" @click="goToday" class="today-btn">今天</el-button>
       </div>
-      <el-radio-group v-model="viewMode" size="small">
-        <el-radio-button value="month">月视图</el-radio-button>
-        <el-radio-button value="week">周列表</el-radio-button>
-      </el-radio-group>
     </div>
 
-    <!-- View A: 月历网格 -->
-    <div v-if="viewMode === 'month'" class="month-grid">
+    <!-- 月历网格 -->
+    <div class="month-grid">
       <div class="grid-header">
         <div class="grid-corner">标签</div>
         <div class="day-header" v-for="d in weekDays" :key="d">{{ d }}</div>
@@ -97,33 +93,6 @@
             </div>
           </div>
         </template>
-      </div>
-    </div>
-
-    <!-- View B: 周列表 -->
-    <div v-else class="week-list">
-      <div v-for="(week, wi) in calendarWeeks" :key="wi" class="week-group">
-        <div class="week-title">
-          {{ weekLabel(wi) }}
-          <span class="week-task-count">{{ weekTasks(wi).length }} 个任务</span>
-        </div>
-        <div v-if="weekTasks(wi).length === 0" class="week-empty">本周暂无任务</div>
-        <div v-for="task in weekTasks(wi)" :key="task.id" class="week-card"
-          :style="{ borderLeftColor: importanceColors[task.importance] || '#6b7280' }">
-          <div class="card-top">
-            <span class="card-title">{{ task.title }}</span>
-            <el-tag :type="statusTagType(task.status)" size="small" effect="plain">
-              {{ statusLabel(task.status) }}
-            </el-tag>
-          </div>
-          <div class="card-meta">
-            <span class="card-importance" :style="{ color: importanceColors[task.importance] || '#6b7280' }">
-              {{ task.importance }}
-            </span>
-            <span class="card-dates">{{ dateFormatter(task.create_time) }} → {{ dateFormatter(task.close_time) }}</span>
-          </div>
-          <div v-if="task.target" class="card-target">{{ task.target }}</div>
-        </div>
       </div>
     </div>
   </div>
@@ -250,7 +219,7 @@ function splitIntoSegments(task, range) {
     segs.push({
       id: `${task.id}-${idx}`,
       title: task.title,
-      label: `${statusLabel(task.status)} ${task.title}`,
+      label: `【${task.importance}】【${dateFormatter(task.create_time)}-${dateFormatter(task.close_time)}】${task.title}`,
       status: task.status,
       importance: task.importance,
       week: Math.floor(idx / 7),
@@ -374,40 +343,16 @@ function weekSegmentsByTag(tagId) {
 }
 
 function taskBarStyle(seg) {
+  // 按任务 id 生成稳定色相，每个任务独立颜色
+  const hue = (seg.id.split('-')[0] * 47 + 200) % 360
   return {
     left: (seg.col / 7 * 100) + '%',
     width: (seg.span / 7 * 100) + '%',
     top: seg.pixelTop + 'px',
     height: seg.pixelHeight + 'px',
-    backgroundColor: importanceColors[seg.importance] || '#6b7280'
+    backgroundColor: `hsl(${hue}, 55%, 45%)`,
+    borderLeft: `3px solid hsl(${hue}, 70%, 35%)`
   }
-}
-
-// ========== View B: 周列表 ==========
-const calendarWeeks = computed(() => {
-  const weeks = []
-  for (let i = 0; i < 6; i++) {
-    weeks.push(calendarDays.value.slice(i * 7, (i + 1) * 7))
-  }
-  return weeks
-})
-
-function weekLabel(wi) {
-  const start = calendarWeeks.value[wi][0].date
-  const end = calendarWeeks.value[wi][6].date
-  return `${dateFormatter(start)} ~ ${dateFormatter(end)}`
-}
-
-function weekTasks(wi) {
-  const weekStart = calendarWeeks.value[wi][0].date
-  const weekEnd = calendarWeeks.value[wi][6].date
-
-  return taskList.value.filter(task => {
-    const start = dateToObj(task.create_time)
-    const end = dateToObj(task.close_time)
-    // 任务时间段与本周有交集
-    return start <= weekEnd && end >= weekStart
-  }).sort((a, b) => a.status - b.status)
 }
 
 // ========== 统计 (保留原有) ==========

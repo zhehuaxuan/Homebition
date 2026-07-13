@@ -184,6 +184,11 @@ onMounted(() => {
     color: var(--text-secondary);
 }
 
+.biography {
+    max-height: 100px;
+    overflow: hidden;
+}
+
 @media (max-width: 480px) {
   .avatar {
     width: 140px !important;

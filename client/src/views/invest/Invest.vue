@@ -58,7 +58,7 @@
   margin-right: 16px;
   flex-shrink: 0;
   position: sticky;
-  top: 80px;
+  top: 0;
   align-self: flex-start;
   height: fit-content;
 }

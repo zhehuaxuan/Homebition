@@ -55,7 +55,7 @@ onUnmounted(() => {
  <nav>
         <div class="nav-brand">Homebition</div>
         <!-- 桌面端导航链接 -->
-        <ul class="nav-links" :class="{ 'nav-open': menuOpen }">
+        <ul class="nav-links">
             <li><router-link to="/" @click="closeMenu">首页</router-link></li>
             <li><router-link to="/articles" @click="closeMenu">我的文章</router-link></li>
             <li><router-link to="/invest" @click="closeMenu">投资频道</router-link></li>

@@ -374,7 +374,7 @@
 
         /* 手机端隐藏列 */
         @media (max-width: 768px) {
-            .hide-on-mobile .el-table__cell {
+            .hide-on-mobile {
                 display: none !important;
             }
         }

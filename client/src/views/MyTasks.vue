@@ -209,6 +209,11 @@ onMounted(() => {
   border-radius: 4px !important;
 }
 
+/* 桌面端保持固定高度 */
+.my-tasks-container {
+  height: 700px;
+}
+
 @media (max-width: 768px) {
   .my-tasks-container {
     height: calc(100vh - 160px) !important;

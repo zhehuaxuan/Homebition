@@ -49,9 +49,14 @@
         <el-button size="small" circle @click="changeMonth(1)">›</el-button>
         <el-button size="small" @click="goToday" class="today-btn">今天</el-button>
       </div>
+      <el-radio-group v-model="viewMode" size="small">
+        <el-radio-button value="month">月视图</el-radio-button>
+        <el-radio-button value="list">任务列表</el-radio-button>
+      </el-radio-group>
     </div>
 
-    <div class="month-grid">
+    <!-- 月视图 -->
+    <div v-if="viewMode === 'month'" class="month-grid">
       <div class="grid-header">
         <div class="day-header" v-for="d in weekDays" :key="d">{{ d }}</div>
       </div>
@@ -76,6 +81,21 @@
         </div>
       </div>
     </div>
+
+    <!-- 任务列表视图 -->
+    <div v-else class="week-list">
+      <div v-for="(item, idx) in taskList" :key="item.id" class="week-card">
+        <div class="card-top">
+          <span class="card-title">{{ item.title }}</span>
+          <el-tag :type="item.status === 1 ? 'primary' : item.status === 2 ? 'success' : 'info'" size="small" effect="plain">{{ ['待启动', '进行中', '已完成'][item.status] || '' }}</el-tag>
+        </div>
+        <div class="card-meta">
+          <span class="card-importance">{{ item.importance }}</span>
+          <span class="card-dates">{{ dateFormatter(item.create_time) }} → {{ dateFormatter(item.close_time) }}</span>
+        </div>
+        <div v-if="item.target" class="card-target">{{ item.target }}</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -87,6 +107,7 @@ import axios from 'axios'
 const taskList = ref([])
 const tagList = ref([])
 const viewDate = ref(new Date())
+const viewMode = ref('month')
 
 const year = computed(() => viewDate.value.getFullYear())
 const month = computed(() => viewDate.value.getMonth())

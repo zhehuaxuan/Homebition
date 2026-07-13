@@ -39,7 +39,7 @@ docs/superpowers/
 ## 文档清单
 
 ### 需求分析
-- [需求分析文档](./specs/requirements/requirements-analysis.md) — 原始需求→验收标准→实现映射、需求-模块矩阵（REQ-001~016）
+- [需求分析文档](./specs/requirements/requirements-analysis.md) — 原始需求→验收标准→实现映射、需求-模块矩阵（REQ-001~018）
 - [需求开发流程](./specs/requirements/workflow.md) — 新需求从提出→设计→归档到知识库的标准工作流
 
 ### 架构设计

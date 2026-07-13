@@ -32,13 +32,25 @@
       </div>
     </div>
 
+    <!-- 月度概览条 -->
+    <div class="month-bar">
+      <el-icon size="16"><Calendar /></el-icon>
+      <span>本月共 <strong>{{ totalMonth }}</strong> 个任务</span>
+      <span class="month-bar-sep">·</span>
+      <span>进行中 <strong>{{ monthDoing }}</strong></span>
+      <span class="month-bar-sep">·</span>
+      <span>待启动 <strong>{{ monthWait }}</strong></span>
+      <span class="month-bar-sep">·</span>
+      <span>已完成 <strong>{{ monthDone }}</strong></span>
+    </div>
+
     <FullCalendar :options="calendarOptions" />
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue'
-import { List, Loading, Clock, WarningFilled } from '@element-plus/icons-vue'
+import { List, Loading, Clock, WarningFilled, Calendar } from '@element-plus/icons-vue'
 import FullCalendar from '@fullcalendar/vue3'
 import resourcePlugin from '@fullcalendar/resource'
 import resourceTimelinePlugin from '@fullcalendar/resource-timeline'
@@ -312,6 +324,29 @@ onMounted(() => {
 .stat-card-overdue .stat-card-icon {
   background: #ef4444;
   color: #fff;
+}
+
+/* ===== 月度概览条 ===== */
+.month-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.month-bar strong {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.month-bar-sep {
+  color: #cbd5e1;
+  margin: 0 2px;
 }
 
 @media (max-width: 768px) {

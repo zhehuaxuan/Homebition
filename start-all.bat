@@ -6,5 +6,5 @@ cd /d E:\Homebition\client
 start /b npm run dev
 
 cd /d E:\Homebition\server
-start /b npm start
+start  npm start
 

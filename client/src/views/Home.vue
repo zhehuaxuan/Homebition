@@ -64,90 +64,84 @@
         </div>
     </div>
 
-    <!-- 作品展示区 -->
+    <!-- 友情链接 -->
     <div class="work-section">
-        <h2 class="work-title">在这里能做什么</h2>
+        <h2 class="work-title">友情链接</h2>
         <div style="text-align: center; margin-bottom: 1rem;">
-            <span style="color: var(--accent); font-size: 1.2rem;">⚡</span>
+            <span style="color: var(--accent); font-size: 1.2rem;">🔗</span>
         </div>
         <div class="work-grid">
-            <!-- Larkmap -->
-            <div class="work-card">
-                <div class="work-icon" style="background-color: #7b61ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-compass"></i>
-                </div>
-                <div class="work-content">
-                    <div class="work-name">Larkmap</div>
-                    <div class="work-desc">设计常用的工具、网站导航</div>
-                </div>
-                <span class="work-arrow">→</span>
-            </div>
-
-            <!-- Qinglcon -->
-            <div class="work-card">
-                <div class="work-icon" style="background-color: #00c853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-phone"></i>
-                </div>
-                <div class="work-content">
-                    <div class="work-name">Qinglcon</div>
-                    <div class="work-desc">2200+ 填充、双色型图标</div>
-                </div>
-            </div>
-
-            <!-- Fljicon -->
-            <div class="work-card">
-                <div class="work-icon" style="background-color: #00c853; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-phone"></i>
-                </div>
-                <div class="work-content">
-                    <div class="work-name">Fljicon</div>
-                    <div class="work-desc">Figma 图标库插件</div>
-                </div>
-            </div>
-
-            <!-- 语雀 -->
-            <div class="work-card">
-                <div class="work-icon" style="background-color: #00b42a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-feather"></i>
-                </div>
-                <div class="work-content">
-                    <div class="work-name">语雀</div>
-                    <div class="work-desc">12w+ 字经验分享</div>
-                </div>
-            </div>
-
-            <!-- Github -->
-            <div class="work-card">
+            <!-- GitHub -->
+            <a href="https://github.com" target="_blank" class="work-card" rel="noopener">
                 <div class="work-icon" style="background-color: #1f2937; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
                     <i class="fab fa-github"></i>
                 </div>
                 <div class="work-content">
-                    <div class="work-name">Github</div>
-                    <div class="work-desc">日常研究的代码</div>
+                    <div class="work-name">GitHub</div>
+                    <div class="work-desc">代码托管与开源社区</div>
                 </div>
-            </div>
+                <span class="work-arrow">→</span>
+            </a>
 
-            <!-- 公众号 -->
-            <div class="work-card">
-                <div class="work-icon" style="background-color: #07c160; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fab fa-weixin"></i>
+            <!-- IMA -->
+            <a href="https://ima.qq.com" target="_blank" class="work-card" rel="noopener">
+                <div class="work-icon" style="background-color: #07c160; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span style="font-size: 14px;">IMA</span>
                 </div>
                 <div class="work-content">
-                    <div class="work-name">公众号</div>
-                    <div class="work-desc">偶尔会更新的所思所想</div>
+                    <div class="work-name">IMA</div>
+                    <div class="work-desc">腾讯智能工作台</div>
                 </div>
-            </div>
+                <span class="work-arrow">→</span>
+            </a>
 
-            <!-- Figma -->
-            <div class="work-card">
-                <div class="work-icon" style="background: linear-gradient(135deg, #f24e1e, #a259ff, #1abcfe, #0acf83); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
-                    <i class="fas fa-palette"></i>
+            <!-- 腾讯文档 -->
+            <a href="https://docs.qq.com" target="_blank" class="work-card" rel="noopener">
+                <div class="work-icon" style="background-color: #0052d9; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span style="font-size: 14px;">T</span>
                 </div>
                 <div class="work-content">
-                    <div class="work-name">Figma</div>
-                    <div class="work-desc">无私奉献的设计文件</div>
+                    <div class="work-name">腾讯文档</div>
+                    <div class="work-desc">在线文档协作平台</div>
                 </div>
-            </div>
+                <span class="work-arrow">→</span>
+            </a>
+
+            <!-- DeepSeek -->
+            <a href="https://chat.deepseek.com" target="_blank" class="work-card" rel="noopener">
+                <div class="work-icon" style="background-color: #4f46e5; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span style="font-size: 12px;">DS</span>
+                </div>
+                <div class="work-content">
+                    <div class="work-name">DeepSeek</div>
+                    <div class="work-desc">AI 对话与推理助手</div>
+                </div>
+                <span class="work-arrow">→</span>
+            </a>
+
+            <!-- 通义千问 -->
+            <a href="https://tongyi.aliyun.com" target="_blank" class="work-card" rel="noopener">
+                <div class="work-icon" style="background-color: #ff6a00; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span style="font-size: 12px;">QW</span>
+                </div>
+                <div class="work-content">
+                    <div class="work-name">通义千问</div>
+                    <div class="work-desc">阿里 AI 大模型助手</div>
+                </div>
+                <span class="work-arrow">→</span>
+            </a>
+
+            <!-- 豆包 -->
+            <a href="https://www.doubao.com" target="_blank" class="work-card" rel="noopener">
+                <div class="work-icon" style="background-color: #00a854; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                    <span style="font-size: 14px;">豆</span>
+                </div>
+                <div class="work-content">
+                    <div class="work-name">豆包</div>
+                    <div class="work-desc">字节跳动 AI 对话助手</div>
+                </div>
+                <span class="work-arrow">→</span>
+            </a>
         </div>
     </div>
 </template>

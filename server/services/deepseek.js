@@ -1,0 +1,210 @@
+const fs = require('fs');
+const path = require('path');
+const xml2js = require('xml2js');
+const axios = require('axios');
+
+let config = null;
+
+const loadConfig = async () => {
+    if (config) return config;
+
+    const configPath = path.join(__dirname, '../config/deepseek.xml');
+    const xmlContent = fs.readFileSync(configPath, 'utf-8');
+    const result = await xml2js.parseStringPromise(xmlContent);
+
+    config = {
+        deepseek: {
+            baseUrl: result.config.deepseek[0].baseurl[0],
+            apiKey: result.config.deepseek[0].apikey[0],
+            model: result.config.deepseek[0].model[0]
+        },
+        minimax: {
+            baseUrl: result.config.minimax[0].baseurl[0],
+            apiKey: result.config.minimax[0].apikey[0],
+            model: result.config.minimax[0].model[0]
+        }
+    };
+
+    return config;
+};
+
+// 验证公司（使用 DeepSeek）
+const verifyCompany = async (query) => {
+    const cfg = await loadConfig();
+
+    const prompt = `你是一个公司信息验证助手。请分析用户的输入，判断是否为有效的上市公司名称或股票代码。
+
+用户输入: "${query}"
+
+请严格按照以下JSON格式返回结果，不要添加任何解释或额外文本：
+{"isCompany":"true or false","name":"公司名称","code":"股票代码如600519或00700等，空则为空字符串"}
+
+判断规则：
+1. 如果输入是已知的上市公司名称（如腾讯、阿里巴巴、贵州茅台等），isCompany为true，name为标准公司名称，code为股票代码
+2. 如果输入是股票代码，isCompany为true，name为对应的公司名称，code为股票代码
+3. 如果输入不包含任何有效的公司信息，isCompany为false，name和code均为空字符串`;
+
+    try {
+        const response = await axios.post(`${cfg.deepseek.baseUrl}/chat/completions`, {
+            model: cfg.deepseek.model,
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            temperature: 0.1,
+            max_tokens: 200
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${cfg.deepseek.apiKey}`
+            },
+            timeout: 30000
+        });
+
+        const content = response.data.choices[0].message.content.trim();
+        console.log('DeepSeek 返回内容:', content);
+
+        // 解析 JSON
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const jsonStr = jsonMatch[0];
+            console.log('解析的 JSON:', jsonStr);
+            return JSON.parse(jsonStr);
+        }
+
+        throw new Error('无法解析返回结果');
+    } catch (error) {
+        console.error('DeepSeek API 调用失败:', error.message);
+        throw error;
+    }
+};
+
+// 企业评估（使用 MiniMax）
+const evaluateCompany = async (companyName, companyCode) => {
+    const cfg = await loadConfig();
+
+    const prompt = `【AI提示词】如何评估一个公司的基本面：
+我是一个股票交易员，请你对【${companyName}】【${companyCode}】按照如下任务进行评估：
+## 任务说明
+请严格按照以下既定评估体系，对指定行业及个股进行量化打分评估，所有评分统一采用0-10分打分制：0分=完全不符合，10分=完全符合，部分符合场景结合实际情况、逻辑匹配度给到0-10分区间对应分数，打分需客观、贴合实际、有理有据。
+整体评估分为两大维度：选行业精确到公司的细分领域（总权重60%）、选公司（总权重40%），两大维度下包含多项细分评估指标，各细分指标均有独立权重，需按权重完成分项打分、后续可汇总综合得分。
+## 一、选行业维度（整体总权重60%）
+本维度包含5项细分评估指标，每项细分指标权重均等，具体打分评判标准如下：
+1. 国家战略与产业政策（权重20%）：评估标的行业是否契合未来3-5年国家发展战略、是否拥有优质持续的产业扶持政策并且扶持政策能够具备持续性、行业利好政策多、产业的发展前景和想象空间大、在产业链当中地位高、政策的扶持驱动确实能够带来业绩的兑现、政策的稳定性高、潜在监管风险低等，按匹配度0-10分打分。
+2. 行业发展空间（权重20%）：评估行业未来市场规模（国内&海外）增长潜力，判断是否具备做大做强的基础，能否会最终成长为万亿级体量赛道，市场增速（CAGR）具备高速增长以及持续性（持续性也可以包含想象空间），同业内卷程度适度，按上述维度0-10分打分。
+3. 行业发展阶段（权重20%）：评估行业当前所处发展周期，核心判定标准：规避红海赛道（行业渗透率＞60%，市场饱和、竞争白热化）、规避纯概念赛道（落地渗透率＜5%，无实际落地场景、无商业化能力），优先处于快速放量前夜，高速增长起步阶段的行业，不满足上述条件的情况下此处得分不能超过5分，满足条件的按匹配度0-10分打分。
+4. 行业叙事周期（权重20%）：评估行业利好逻辑，投资叙事，发展风口的持续性，是否有持续催化剂（如新品发布、月度销量、政策细则落地，至少有3个可预期的未来催化剂），判断行业热度和成长逻辑能否持续3个月以上，优质标的可达到6-12个月及以上（如果是短期的消息驱动或者夕阳稳定行业，那么叙事就会不足，也不存在周期持久的说法）。按周期持久度0-10分打分。
+5. 行业稀缺性与本土优势（权重20%）：评估行业赛道是否具备差异化稀缺属性，是否为中国独有赛道、或中国在全球范围内具备核心竞争优势、技术优势、产业优势、人才优势、数据规模优势、行业需要有一定的技术壁垒并且准入门槛高、不存在被海外卡脖子的风险等，按优势显著程度0-10分打分。
+## 二、选公司维度（整体总权重40%）
+本维度包含9项细分评估指标，各细分指标对应不同权重，结合企业基本面、财务、技术、股价、筹码结构综合打分，具体评判标准及权重如下：
+1.公司战略及管理者治理（权重10%）：公司的战略规划清晰且能够落地，公司战略与国家/行业战略的契合度；管理层具备诚信、战略眼光和执行力，不存在管理者高位减持套现、不存在频繁更换管理层、不存在管理层更换之后管理震动的情况；领导班子稳定特别是公司的CEO&CTO&COO都具备战略眼光和优秀稳健的经营理念、股权激励行权条件好、高管薪酬合理、公司注重股东回报与分红，存在增持或者回购注销等市值管理行为，根据上述维度综合在0-10分打分。
+2. 产品与技术壁垒（权重15%）：评估公司主营业务、核心产品是否清晰明确，公司的产品组合具备差异化策略更佳（例如：公司使用中等马产品与友商上等马产品对标，使公司下等马产品的竞争优势增加，毛利率高），是否构建深厚的技术壁垒、行业壁垒、准入壁垒、研发投入占营收比例持续且较高、研发投入转换成专利转化率/ROIC等，根据上述维度综合在0-10分打分。
+3. 产品核心竞争力（权重15%）：评估公司核心产品是否具备市场稀缺性、技术先进性，是否具备行业内不可替代的核心价值，产品在所在行业中具备行业标杆地位，甚至有定价权（对下游客户的议价能力和对上游的成本转嫁能力）。公司的新产品具备稀缺性、爆发力和明确的想象空间。按竞争力强弱0-10分打分。
+4. 行业财务标杆性（权重10%）：评估公司ROE（净资产收益率）水平是否处于行业头部翘楚位置，企业财务三表（资产负债表、利润表、现金流量表）是否干净、无异常问题、不存在随意调整财报口径&财务波动较大、毛利率&净利率&经营性现金流与净利润的匹配度高（如果不满足此项，行业财务标杆性得分不超过5分）、对大客户的依赖度相对不高等情况，按匹配度0-10分打分。
+5. 业绩增长确定性（权重15%）：评估公司当前业务是否处于业绩爆发增长阶段，预判未来2年业务增长逻辑是否通顺、增长确定性是否极高，按增长确定性0-10分打分。
+6. 企业经营风险排查（权重5%）：核查公司是否满足连续2年盈利、无非标风险、无大额商誉减值暴雷风险、无ST警示及退市风险、无随意改变财报数据的情况，按照影响程度0-10分打分，但是出现任何一个违反的情况不得高于3分。如果公司在"经营风险排查"中的重大问题（如财务造假嫌疑、退市风险），公司维度的评分直接为0分。
+7. 估值与股价走势（权重10%）：核查公司近3年历史PB估值是否处于30%分位以内（对于CAGR>30%的行业，允许PB分位放宽至50%以内），公司TTM是否在行业中属于没有被高估合理水平，股价是否长期横盘整理、无大幅炒作、股价横盘期间北向资金或机构席位连续净买入、不存在股价下降但是TTM反而上升的情况（如果存在这种业绩杀的情况，直接扣掉5分），按匹配度0-10分打分。
+8. 筹码结构状态（权重10%）：评估公司股票筹码是否集中，市场无大量高位套牢盘，筹码结构健康，机构的筹码存在增持的情况，按筹码优质程度0-10分打分。
+9. 均线与股价技术形态（权重10%）：核查标的股票是否满足：近30天股价波动率＜8%、股价走势平稳、成交量缩收敛；M20均线向上穿透M10、M5短期均线，均线粘连有向上发散的趋势；股价下方存在明确、有效的支撑位，按技术形态匹配度0-10分打分。
+## 输出要求
+请严格按照以下JSON格式返回评估结果，不要添加任何解释或额外文本：
+{
+  "companyName": "公司名称",
+  "companyCode": "股票代码",
+  "industryScore": 行业维度总分,
+  "industryItems": [
+    {"指标": "国家战略与产业政策", "权重": "20%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "行业发展空间", "权重": "20%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "行业发展阶段", "权重": "20%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "行业叙事周期", "权重": "20%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "行业稀缺性与本土优势", "权重": "20%", "得分": 分数, "依据": "打分依据"}
+  ],
+  "companyScore": 公司维度总分,
+  "companyItems": [
+    {"指标": "公司战略及管理者治理", "权重": "10%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "产品与技术壁垒", "权重": "15%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "产品核心竞争力", "权重": "15%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "行业财务标杆性", "权重": "10%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "业绩增长确定性", "权重": "15%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "企业经营风险排查", "权重": "5%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "估值与股价走势", "权重": "10%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "筹码结构状态", "权重": "10%", "得分": 分数, "依据": "打分依据"},
+    {"指标": "均线与股价技术形态", "权重": "10%", "得分": 分数, "依据": "打分依据"}
+  ],
+  "totalScore": 综合总分,
+  "summary": "综合评价总结",
+  "pros": ["核心优势1", "核心优势2"],
+  "cons": ["主要瑕疵1", "主要瑕疵2"],
+  "strategy": "交易策略建议"
+}`;
+
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        const url = `${cfg.minimax.baseUrl}/messages`;
+
+        const requestBody = {
+            model: cfg.minimax.model,
+            messages: [
+                { role: 'user', content: prompt }
+            ],
+            max_tokens: 8000,
+            stream: true
+        };
+
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${cfg.minimax.apiKey}`,
+            'anthropic-version': '2023-06-01'
+        };
+
+        axios.post(url, requestBody, {
+            headers: headers,
+            timeout: 300000, // 5分钟超时
+            responseType: 'stream'
+        }).then(response => {
+            console.log('MiniMax 状态码:', response.status);
+
+            response.data.on('data', (chunk) => {
+                chunks.push(chunk);
+            });
+
+            response.data.on('end', () => {
+                const fullData = chunks.join('');
+                console.log('收到 SSE 数据长度:', fullData.length);
+
+                // 解析 SSE 数据
+                let resultContent = '';
+                const lines = fullData.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.slice(6).trim();
+                        if (dataStr === '[DONE]' || dataStr === '') continue;
+
+                        try {
+                            const data = JSON.parse(dataStr);
+                            // 从 content_block_delta 中提取文本
+                            if (data.type === 'content_block_delta' && data.delta && data.delta.text) {
+                                resultContent += data.delta.text;
+                            }
+                        } catch (e) {
+                            // 忽略解析错误
+                        }
+                    }
+                }
+
+                console.log('MiniMax 返回内容长度:', resultContent.length);
+                resolve(resultContent);
+            });
+
+            response.data.on('error', (err) => {
+                console.error('SSE 流错误:', err);
+                reject(err);
+            });
+        }).catch(err => {
+            console.error('MiniMax API 调用失败:', err.message);
+            reject(err);
+        });
+    });
+};
+
+module.exports = { verifyCompany, evaluateCompany };

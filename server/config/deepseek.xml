@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <deepseek>
+        <baseurl>https://api.deepseek.com</baseurl>
+        <apikey>sk-773bf47d99fd4f969db16f8f6da24a74</apikey>
+        <model>deepseek-v4-flash</model>
+    </deepseek>
+    <minimax>
+        <baseurl>https://topapi.link/v1</baseurl>
+        <apikey>sk-1Ub3Lp9pvfjgvZQyx1meIPPo9yej64E8jVLHuHBgVuLnH7ai</apikey>
+        <model>MiniMax-M3</model>
+    </minimax>
+</config>

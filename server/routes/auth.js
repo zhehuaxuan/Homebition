@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const { sendMail } = require('../services/mail');
+const mailConfig = require('../config/mail');
 
 // 默认管理员信息
 const ADMIN_USER = {
@@ -29,6 +31,34 @@ const initAdminUser = async (db) => {
         }
     } catch (err) {
         console.error('❌ 初始化管理员用户失败:', err);
+    }
+};
+
+// 初始化 api_manager 表
+const initApiManagerTable = async (db) => {
+    try {
+        const [tables] = await db.execute("SHOW TABLES LIKE 'api_manager'");
+        if (tables.length === 0) {
+            await db.execute(`
+                CREATE TABLE api_manager (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(255) NOT NULL COMMENT '接口名称',
+                    path VARCHAR(500) NOT NULL COMMENT '接口路径',
+                    description TEXT COMMENT '接口描述',
+                    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            `);
+            console.log('✅ api_manager 表已创建');
+        }
+
+        // 检查 subscription 表是否有 api_id 字段
+        const [subCols] = await db.execute("SHOW COLUMNS FROM subscription LIKE 'api_id'");
+        if (subCols.length === 0) {
+            await db.execute("ALTER TABLE subscription ADD COLUMN api_id INT COMMENT '接口ID' AFTER template");
+            console.log('✅ subscription 表已添加 api_id 字段');
+        }
+    } catch (err) {
+        console.error('❌ 初始化 api_manager 表失败:', err);
     }
 };
 
@@ -117,5 +147,89 @@ router.get('/auth/profile', async (req, res) => {
 
 // 导出初始化函数，供 server 启动时调用
 router.initAdmin = initAdminUser;
+router.initApiManagerTable = initApiManagerTable;
+
+// 发送邮件测试接口
+router.post('/auth/send-mail', async (req, res) => {
+    const { to, subject, content, template, data } = req.body;
+
+    if (!mailConfig.enabled) {
+        return res.status(400).json({
+            code: 400,
+            message: '邮件服务未启用，请在 config/mail.js 中配置并启用'
+        });
+    }
+
+    if (!to || !subject) {
+        return res.status(400).json({
+            code: 400,
+            message: '参数不完整，需要提供 to 和 subject'
+        });
+    }
+
+    if (!content && !template) {
+        return res.status(400).json({
+            code: 400,
+            message: '需要提供 content 或 template'
+        });
+    }
+
+    try {
+        await sendMail({
+            to,
+            subject,
+            html: content,
+            template,
+            data
+        });
+        res.json({
+            code: 200,
+            message: '邮件发送成功'
+        });
+    } catch (err) {
+        console.error('发送邮件失败:', err);
+        res.status(500).json({
+            code: 500,
+            message: '邮件发送失败: ' + err.message
+        });
+    }
+});
+
+// 邮件模板测试接口
+router.get('/auth/test-mail-template', async (req, res) => {
+    const { sendMail } = require('../services/mail');
+
+    if (!mailConfig.enabled) {
+        return res.status(400).json({
+            code: 400,
+            message: '邮件服务未启用'
+        });
+    }
+
+    try {
+        await sendMail({
+            to: 'zhehuaxuan@aliyun.com',
+            subject: '欢迎邮件',
+            template: 'welcome.ejs',
+            data: {
+                title: '欢迎使用 Homebition',
+                username: '张三',
+                message: '感谢您的注册！',
+                items: ['功能一', '功能二'],
+                footer: '祝您使用愉快'
+            }
+        });
+        res.json({
+            code: 200,
+            message: '测试邮件发送成功'
+        });
+    } catch (err) {
+        console.error('发送邮件失败:', err);
+        res.status(500).json({
+            code: 500,
+            message: '邮件发送失败: ' + err.message
+        });
+    }
+});
 
 module.exports = router;

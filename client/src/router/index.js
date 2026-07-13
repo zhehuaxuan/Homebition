@@ -2,6 +2,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
   {
+    path: '/mail-test',
+    name: 'MailTest',
+    component: () => import('../views/MailTest.vue')
+  },
+  {
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue')
@@ -49,6 +54,10 @@ const routes = [
         path: 'tag-list',
         name: 'TagList',
         component: () => import('../views/about/Tag.vue')
+      }, {
+        path: 'subscription-list',
+        name: 'SubscriptionList',
+        component: () => import('../views/about/Subscription.vue')
       },{
         path: '/article/add',
         name: 'ArticleAdd',
@@ -62,6 +71,27 @@ const routes = [
       {
         path: '',
         redirect: '/about/profile'
+      }
+    ]
+  },
+  {
+    path: '/invest',
+    name: 'Invest',
+    component: () => import('../views/invest/Invest.vue'),
+    children: [
+      {
+        path: 'enterprise',
+        name: 'Enterprise',
+        component: () => import('../views/invest/Enterprise.vue')
+      },
+      {
+        path: 'market',
+        name: 'Market',
+        component: () => import('../views/invest/Market.vue')
+      },
+      {
+        path: '',
+        redirect: '/invest/enterprise'
       }
     ]
   }

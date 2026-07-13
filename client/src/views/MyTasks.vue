@@ -57,7 +57,7 @@
       </div>
       <div class="grid-body">
         <div v-for="wk in 6" :key="wk" class="week-row" :style="{ height: weekRowHeight(wk - 1) + 'px' }">
-          <div class="week-bg">
+          <div class="week-bg" :style="{ minHeight: '28px' }">
             <div v-for="d in 7" :key="(wk-1)*7+d"
               class="day-cell"
               :class="dayCellClass(calendarDays[(wk-1)*7+(d-1)])">

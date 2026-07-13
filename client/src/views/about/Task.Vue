@@ -4,26 +4,28 @@
 
     <div class="action-bar">
       <el-input v-model="queryParams.keyword" placeholder="搜索任务名称/目标" clearable style="width: 260px"
-        @keyup.enter="getList" />
+        @keyup.enter="getList" class="search-input" />
 
-      <el-select v-model="queryParams.status" placeholder="状态过滤" clearable style="width: 150px">
+      <el-select v-model="queryParams.status" placeholder="状态过滤" clearable style="width: 150px"
+        class="desktop-only">
         <el-option label="待启动" value="待启动" />
         <el-option label="进行中" value="进行中" />
         <el-option label="已完成" value="已完成" />
         <el-option label="挂起中" value="挂起中" />
       </el-select>
 
-      <el-select v-model="queryParams.tagId" placeholder="标签过滤" clearable style="width: 150px">
+      <el-select v-model="queryParams.tagId" placeholder="标签过滤" clearable style="width: 150px"
+        class="desktop-only">
         <el-option v-for="item in tagList" :key="item.id" :label="item.name" :value="item.id" />
       </el-select>
 
       <el-button type="primary" @click="getList">查询</el-button>
-      <el-button @click="resetQuery">重置</el-button>
+      <el-button @click="resetQuery" class="desktop-only">重置</el-button>
 
       <div class="spacer"></div>
 
       <el-button type="primary" @click="handleAdd">新增</el-button>
-      <el-button type="success" @click="getList">刷新</el-button>
+      <el-button type="success" @click="getList" class="desktop-only">刷新</el-button>
     </div>
 
     <div class="table-container">
@@ -41,7 +43,7 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="importance" label="重要性" sortable :sort-method="sortImportance">
+      <el-table-column prop="importance" label="重要性" sortable :sort-method="sortImportance" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
@@ -55,8 +57,8 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="create_time" label="开始日期" />
-      <el-table-column prop="close_time" label="闭环日期" sortable :sort-method="sortDate" />
+      <el-table-column prop="create_time" label="开始日期" class-name="hide-on-mobile" />
+      <el-table-column prop="close_time" label="闭环日期" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
       <el-table-column prop="status" label="状态" sortable :sort-method="sortStatus">
         <template #default="scope">
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
@@ -718,5 +720,29 @@ watch(
 :deep(.custom-tag):nth-child(5n+5) {
   background: #909399 !important;
   color: #fff;
+}
+
+/* 手机端响应式 */
+@media (max-width: 768px) {
+  .search-input {
+    width: 130px !important;
+  }
+
+  .desktop-only {
+    display: none !important;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .table-container .el-table {
+    min-width: auto;
+  }
+
+  .stats-bar {
+    font-size: 12px !important;
+    line-height: 1.8 !important;
+  }
 }
 </style>

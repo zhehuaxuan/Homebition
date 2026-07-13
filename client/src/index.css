@@ -372,6 +372,12 @@
             min-width: 600px;
         }
 
+        @media (max-width: 768px) {
+            .table-container .el-table {
+                min-width: auto;
+            }
+        }
+
         /* 手机端隐藏列 */
         @media (max-width: 768px) {
             .hide-on-mobile {

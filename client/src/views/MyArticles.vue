@@ -84,6 +84,43 @@
 .error {
     color: #f59e0b;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .article-page {
+        margin: 12px 16px 0;
+    }
+
+    .article-header {
+        display: none;
+    }
+
+    .article-item {
+        flex-wrap: wrap;
+        height: auto;
+        padding: 10px 0;
+        border-bottom: 1px solid #334155;
+    }
+
+    .article-item .col-index {
+        width: auto;
+        margin-right: 6px;
+    }
+
+    .article-item .col-date {
+        width: auto;
+        font-size: 12px;
+    }
+
+    .article-item .col-title {
+        width: 100%;
+        margin-top: 4px;
+        font-size: 14px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+}
 </style>
 
 <template>

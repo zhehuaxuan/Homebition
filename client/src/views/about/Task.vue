@@ -804,7 +804,8 @@ watch(
 
 .text-overdue { color: #f56c6c; font-weight: bold; }
 
-.action-btns { display: flex; align-items: center; gap: 8px; }
+.action-btns { display: flex; align-items: center; gap: 6px; }
+.action-btns .el-button { margin: 0; }
 
 /* 详情样式 */
 .detail-box {

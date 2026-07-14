@@ -43,12 +43,12 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="importance" label="重要性" width="80" sortable :sort-method="sortImportance" class-name="hide-on-mobile">
+      <el-table-column prop="importance" label="重要性" width="95" sortable :sort-method="sortImportance" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="workload" label="工作量" width="80" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
+      <el-table-column prop="workload" label="工作量" width="95" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
         <template #default="scope">
           <span>{{ scope.row.workload || 0 }}d</span>
         </template>
@@ -62,19 +62,19 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="create_time" label="开始日期" width="100" class-name="hide-on-mobile" />
-      <el-table-column prop="close_time" label="闭环日期" width="100" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
+      <el-table-column prop="create_time" label="开始日期" width="110" class-name="hide-on-mobile" />
+      <el-table-column prop="close_time" label="闭环日期" width="110" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
       <el-table-column prop="status" label="状态" width="90" sortable :sort-method="sortStatus">
         <template #default="scope">
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="progress" label="进度" width="70" sortable :sort-method="sortNumber">
+      <el-table-column prop="progress" label="进度" width="80" sortable :sort-method="sortNumber">
         <template #default="scope">
           <span>{{ scope.row.progress || 0 }}%</span>
         </template>
       </el-table-column>
-      <el-table-column prop="remainDays" label="剩余天数" width="80" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
+      <el-table-column prop="remainDays" label="剩余天数" width="95" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
         <template #default="scope">
           <span :class="{ 'text-overdue': scope.row.remainDays < 0 && scope.row.status !== '已完成' }">
             {{ scope.row.remainDays }}

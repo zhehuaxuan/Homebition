@@ -93,6 +93,12 @@
             <el-tag :type="scope.row.status===1?'primary':scope.row.status===2?'success':scope.row.status===3?'warning':'info'" size="small" effect="plain">{{['待启动','进行中','已完成','挂起中'][scope.row.status]||''}}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="工作量" width="80">
+          <template #default="scope">{{ scope.row.workload || 0 }}d</template>
+        </el-table-column>
+        <el-table-column label="进度" width="80">
+          <template #default="scope">{{ scope.row.progress || 0 }}%</template>
+        </el-table-column>
         <el-table-column label="起止日期" min-width="220">
           <template #default="scope">{{dateFormatter(scope.row.create_time)}} → {{dateFormatter(scope.row.close_time)}}</template>
         </el-table-column>

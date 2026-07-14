@@ -1,5 +1,11 @@
+// 0. 加载环境变量（必须最前面）
+require('dotenv').config();
+
 const express = require('express');
 const app = express();
+
+const requestLogger = require('./middleware/requestLogger');
+const logger = require('./services/logger');
 
 // 设置 Express 超时为 5 分钟
 app.use((req, res, next) => {
@@ -12,12 +18,12 @@ app.use((req, res, next) => {
 // 1. 加载 MySQL 连接池（必须放在最前面）
 const mysql = require('mysql2/promise');
 
-// 2. 创建 MySQL 连接（改成你自己的信息）
+// 2. 创建 MySQL 连接（从环境变量读取）
 const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: 'admin', // 必须改
-  database: 'homebition',   // 必须改
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || 'admin',
+  database: process.env.DB_NAME || 'homebition',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -31,6 +37,13 @@ app.use((req, res, next) => {
 
 // 4. 解析 JSON（必须写在挂载 db 之后、路由之前）
 app.use(express.json());
+
+// 4.5 Token 校验中间件（必须在路由之前）
+const authMiddleware = require('./middleware/auth');
+app.use(authMiddleware);
+
+// 4.6 请求日志（记录所有 HTTP 请求）
+app.use(requestLogger);
 
 // 5. 加载路由（最后加载路由！）
 const tagRouter = require('./routes/tag');
@@ -54,6 +67,14 @@ app.use('/api', templateRouter);
 app.use('/api', apiManagerRouter);
 app.use('/api', investRouter);
 
+// 5.5 全局错误处理中间件（必须在路由之后）
+app.use((err, req, res, next) => {
+  logger.error('[http] 未捕获错误', {
+    url: req.originalUrl, method: req.method, error: err.message, stack: err.stack
+  });
+  res.status(500).json({ code: 500, msg: '服务器内部错误' });
+});
+
 // 6. 初始化数据库（启动时执行一次）
 authRouter.initAdmin(pool);
 authRouter.initApiManagerTable(pool);
@@ -64,10 +85,10 @@ const mailConfig = require('./config/mail');
 const { initTransporter } = require('./services/mail');
 if (mailConfig.enabled) {
     initTransporter(mailConfig);
-    console.log('✅ 邮件服务已初始化');
+    logger.info('[mail] 邮件服务已初始化');
 }
 
 // 启动服务
 app.listen(3000, () => {
-  console.log('✅ 服务启动成功：http://localhost:3000');
+  logger.info('[server] 服务启动成功：http://localhost:3000');
 });

@@ -111,6 +111,8 @@
           <el-tag :type="detailData.status===1?'primary':detailData.status===2?'success':detailData.status===3?'warning':'info'" size="small" effect="plain">{{['待启动','进行中','已完成','挂起中'][detailData.status]||''}}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="剩余时间">{{ detailData.remainDays }} 天</el-descriptions-item>
+        <el-descriptions-item label="工作量">{{ detailData.workload || 0 }} 人天</el-descriptions-item>
+        <el-descriptions-item label="实际耗时">{{ detailData.actual_days != null ? detailData.actual_days + ' 天' : '-' }}</el-descriptions-item>
         <el-descriptions-item label="创建日期">{{ dateFormatter(detailData.create_time) }}</el-descriptions-item>
         <el-descriptions-item label="闭环日期">{{ dateFormatter(detailData.close_time) }}</el-descriptions-item>
         <el-descriptions-item label="任务目标" :span="2">
@@ -132,7 +134,7 @@
       </div>
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进度</div>
-        <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 50 ? '#409eff' : '#e6a23c'" style="margin-bottom:8px;" />
+        <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 60 ? '#409eff' : p >= 30 ? '#e6a23c' : '#f56c6c'" style="margin-bottom:8px;" />
         <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
       </div>
       <div style="margin-top:15px;">

@@ -48,7 +48,7 @@
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="workload" label="工作量" width="95" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
+      <el-table-column prop="workload" label="工作量" width="95" class-name="hide-on-mobile" sortable :sort-method="sortWorkload">
         <template #default="scope">
           <span>{{ scope.row.workload || 0 }}d</span>
         </template>
@@ -69,7 +69,7 @@
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="progress" label="进度" width="80" sortable :sort-method="sortNumber">
+      <el-table-column prop="progress" label="进度" width="80" sortable :sort-method="sortProgress">
         <template #default="scope">
           <span>{{ scope.row.progress || 0 }}%</span>
         </template>
@@ -639,15 +639,9 @@ const sortStatus = (a, b) => {
   return map[a.status] - map[b.status]
 }
 const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)
-const sortNumber = (a, b, field) => {
-  // 支持按进度、工作量等数字字段排序
-  const getVal = (row) => {
-    if (field === 'progress') return row.progress || 0
-    if (field === 'workload') return row.workload || 0
-    return row.remainDays
-  }
-  return getVal(a) - getVal(b)
-}
+const sortNumber = (a, b) => a.remainDays - b.remainDays
+const sortWorkload = (a, b) => (a.workload || 0) - (b.workload || 0)
+const sortProgress = (a, b) => (a.progress || 0) - (b.progress || 0)
 
 const customProgressColor = (percentage) => {
   if (percentage >= 100) return '#67c23a'

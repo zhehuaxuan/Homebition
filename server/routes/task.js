@@ -13,11 +13,11 @@ router.get('/tasks', async (req, res) => {
 
 // 新增任务
 router.post('/task/add', async (req, res) => {
-  const { title, target, create_time, close_time, status, importance, tagIds } = req.body;
+  const { title, target, create_time, close_time, status, importance, tagIds, workload } = req.body;
   if (!title) return res.status(400).json({ code: 400, message: '任务名称不能为空' });
 
   try {
-    const sql = `INSERT INTO task (title, target, create_time, close_time, tags, status,importance) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO task (title, target, create_time, close_time, tags, status, importance, workload) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     const [result] = await req.db.query(sql, [
       title,
       target || '',
@@ -25,7 +25,8 @@ router.post('/task/add', async (req, res) => {
       close_time,
       JSON.stringify(tagIds),
       status || 0,
-      importance
+      importance,
+      workload || 0
     ]);
 
     res.json({ code: 0, message: '新增成功', data: { id: result.insertId } });
@@ -40,16 +41,24 @@ router.post('/task/add', async (req, res) => {
 // ------------------------------
 router.post('/task/progress/add', async (req, res) => {
   try {
-    const { taskId, content } = req.body;
+    const { taskId, content, progress } = req.body;
 
     if (!taskId || !content) {
       return res.status(400).json({ code: 400, message: '参数缺失' });
     }
     // 插入 taskdetail 表
     const [result] = await req.db.query(
-      'INSERT INTO taskdetail (task_id, content,create_time) VALUES (?, ?,? )',
-      [taskId, content,new Date()]
+      'INSERT INTO taskdetail (task_id, content, create_time) VALUES (?, ?, ?)',
+      [taskId, content, new Date()]
     );
+
+    // 如果传了 progress，同步更新 task 表
+    if (progress !== undefined && progress !== null) {
+      await req.db.query(
+        'UPDATE task SET progress = ? WHERE id = ?',
+        [Math.max(0, Math.min(100, parseInt(progress) || 0)), taskId]
+      );
+    }
 
     res.json({
       code: 0,
@@ -86,7 +95,7 @@ router.get('/task/progress/:taskId', async (req, res) => {
 
 // ===================== 修改任务（完整匹配前端参数） =====================
 router.post('/task/update', async (req, res) => {
-  const { id, title, importance, target, create_time, close_time, tagIds } = req.body;
+  const { id, title, importance, target, create_time, close_time, tagIds, workload } = req.body;
 
   // 1. 必传参数校验
   if (!id || !title || !importance || !create_time || !close_time) {
@@ -103,7 +112,8 @@ router.post('/task/update', async (req, res) => {
         target = ?,
         create_time = ?,
         close_time = ?,
-        tags=?
+        tags = ?,
+        workload = ?
         WHERE id = ?
     `;
     const tagsStr = JSON.stringify(tagIds);
@@ -114,6 +124,7 @@ router.post('/task/update', async (req, res) => {
       create_time,
       close_time,
       tagsStr,
+      workload || 0,
       id
     ]);
 
@@ -191,7 +202,20 @@ router.post('/task/updateStatus', async (req, res) => {
       })
     }
 
-    // 5. 返回成功
+    // 5. 状态改为"已完成"(2)时，自动计算实际耗时、记录完成时间、进度设 100
+    if (status === 2) {
+      await req.db.query(
+        'UPDATE task SET progress = 100, actual_days = DATEDIFF(NOW(), create_time), finished_at = NOW() WHERE id = ?',
+        [id]
+      );
+      // 自动写一条完成进展
+      await req.db.query(
+        'INSERT INTO taskdetail (task_id, content, create_time) VALUES (?, ?, NOW())',
+        [id, '任务已完成']
+      );
+    }
+
+    // 6. 返回成功
     return res.json({
       code: 0,
       message: '状态修改成功'
@@ -227,6 +251,20 @@ router.delete('/task/delete/:id', async (req, res) => {
     res.json({ code: 0, message: '删除成功' });
   } catch (err) {
     res.status(500).json({ code: 500, message: err.message });
+  }
+});
+
+// 删除进展记录
+router.delete('/task/progress/delete/:id', async (req, res) => {
+  try {
+    const [result] = await req.db.query('DELETE FROM taskdetail WHERE id = ?', [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ code: 404, message: '进展记录不存在' });
+    }
+    res.json({ code: 0, message: '删除成功' });
+  } catch (err) {
+    console.error('删除进展记录失败:', err);
+    res.status(500).json({ code: 500, message: '服务器异常' });
   }
 });
 

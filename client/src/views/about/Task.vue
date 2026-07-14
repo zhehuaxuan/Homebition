@@ -64,7 +64,7 @@
       </el-table-column>
       <el-table-column prop="create_time" label="开始日期" width="100" class-name="hide-on-mobile" />
       <el-table-column prop="close_time" label="闭环日期" width="100" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
-      <el-table-column prop="status" label="状态" width="80" sortable :sort-method="sortStatus">
+      <el-table-column prop="status" label="状态" width="90" sortable :sort-method="sortStatus">
         <template #default="scope">
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>

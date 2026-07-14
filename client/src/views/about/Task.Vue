@@ -29,7 +29,7 @@
     </div>
 
     <div class="table-container">
-    <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange">
+    <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange" :row-class-name="tableRowClassName">
       <el-table-column prop="title" label="任务名称" />
       <el-table-column label="目标" prop="target" min-width="160" class-name="hide-on-mobile">
         <template #default="scope">
@@ -48,6 +48,11 @@
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
+      <el-table-column prop="workload" label="工作量(人天)" width="110" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
+        <template #default="scope">
+          <span>{{ scope.row.workload || 0 }} 人天</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="tagsShow" label="标签" min-width="150" class-name="hide-on-mobile">
         <template #default="scope">
           <div class="tag-list">
@@ -64,7 +69,20 @@
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" class-name="hide-on-mobile" />
+      <el-table-column prop="progress" label="进度" width="80" sortable :sort-method="sortNumber">
+        <template #default="scope">
+          <span :style="{ color: scope.row.status === '已完成' ? '#67c23a' : (scope.row.remainDays < 0 ? '#f56c6c' : '#333'), fontWeight: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? 'bold' : 'normal' }">
+            {{ scope.row.progress || 0 }}%
+          </span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
+        <template #default="scope">
+          <span :style="{ color: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? '#f56c6c' : '#333', fontWeight: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? 'bold' : 'normal' }">
+            {{ scope.row.remainDays }}
+          </span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="200" align="center">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
@@ -97,10 +115,11 @@
           <el-tag :type="getStatusCodeType(item.status)" size="small" effect="plain">{{ item.status }}</el-tag>
           <el-tag :type="getImportanceTagType(item.importance)" size="small" style="margin-left:6px">{{ item.importance }}</el-tag>
           <span class="card-remain" :class="{ overdue: item.remainDays < 0 && item.status !== '已完成' }">
-            {{ item.remainDays }} 天
+            {{ item.remainDays }} 天 | {{ item.progress || 0 }}%
           </span>
         </div>
         <div class="card-dates">{{ item.create_time }} → {{ item.close_time }}</div>
+        <div class="card-row"><span class="card-label">工作量</span>{{ item.workload || 0 }} 人天</div>
         <div class="card-tags" v-if="item.tagsShow && item.tagsShow.length">
           <el-tag v-for="tag in item.tagsShow" :key="tag" size="small" class="custom-tag">{{ tag }}</el-tag>
         </div>
@@ -122,18 +141,20 @@
     </div>
     <!-- 任务统计栏 -->
     <div class="stats-bar" style="margin-top: 16px; font-size: 14px;">
-      截止{{ today }}，当前共计任务数{{ totalAll }}个，
+      截止{{ today }}，当前共计任务数{{ totalAll }}个，总预估工作量{{ totalWorkload }}人天，
       其中
       <el-tag type="primary">进行中</el-tag>：{{ totalDoing }}个，
       <el-tag type="info">待启动</el-tag>：{{ totalWait }}个，
       <el-tag type="success">已完成</el-tag>：{{ totalDone }}个，
+      平均进度 {{ avgProgress }}%；
       当前已超期任务：<span style="color:red; font-weight:bold;">{{ totalOverdue }}</span>个；
 
       本月共计任务数{{ totalMonth }}个，
       其中
       <el-tag type="primary">进行中</el-tag>：{{ monthDoing }}个，
       <el-tag type="info">待启动</el-tag>：{{ monthWait }}个，
-      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个。
+      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个，
+      月完成率 {{ monthDoneRate }}%。
     </div>
   </div>
 
@@ -150,6 +171,8 @@
           }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="剩余时间">{{ detailData.remainDays }} 天</el-descriptions-item>
+        <el-descriptions-item label="工作量">{{ detailData.workload || 0 }} 人天</el-descriptions-item>
+        <el-descriptions-item label="实际耗时">{{ detailData.actual_days != null ? detailData.actual_days + ' 天' : '-' }}</el-descriptions-item>
         <el-descriptions-item label="创建日期">{{ detailData.create_time }}</el-descriptions-item>
         <el-descriptions-item label="闭环日期">{{ detailData.close_time }}</el-descriptions-item>
         <el-descriptions-item label="标签" :span="2">
@@ -166,7 +189,12 @@
         <div class="progress-list" v-if="progressList.length">
           <div v-for="(item, idx) in progressList" :key="idx" class="progress-item">
             <div class="time">{{ item.create_time }}</div>
-            <div class="content">{{ item.content }}</div>
+            <div class="progress-item-body">
+              <div class="content">{{ item.content }}</div>
+              <el-button type="danger" size="small" text @click="handleDeleteProgress(item.id)" class="delete-progress-btn">
+                <el-icon><Close /></el-icon>
+              </el-button>
+            </div>
           </div>
         </div>
         <div v-else style="color:#999; padding:10px 0;">暂无进展记录</div>
@@ -175,6 +203,11 @@
       <!-- 进展反馈输入框 -->
       <div class="feedback-section" style="margin-top:15px;">
         <div class="title">添加进展反馈</div>
+        <div class="feedback-progress" style="margin-bottom:12px;">
+          <div class="title">任务进度</div>
+          <el-progress :percentage="detailData.progress" :color="customProgressColor" style="margin-bottom:8px;" />
+          <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
+        </div>
         <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500"
           show-word-limit />
       </div>
@@ -216,6 +249,9 @@
         <el-select v-model="taskForm.tagIds" multiple placeholder="请选择标签" style="width: 100%">
           <el-option v-for="item in tagList" :key="item.id" :label="item.name" :value="item.id" />
         </el-select>
+      </el-form-item>
+      <el-form-item label="工作量（人天）">
+        <el-input-number v-model="taskForm.workload" :min="0" :step="0.5" :precision="1" style="width: 100%" />
       </el-form-item>
     </el-form>
     <template #footer>
@@ -267,7 +303,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown } from '@element-plus/icons-vue'
+import { Close, ArrowDown } from '@element-plus/icons-vue'
 
 const taskList = ref([])
 const statusDialogVisible = ref(false)
@@ -282,6 +318,7 @@ const detailVisible = ref(false)
 const detailData = ref(null)
 const progressList = ref([])
 const feedbackContent = ref('')
+const feedbackProgress = ref(0)
 
 const taskForm = reactive({
   title: '',
@@ -289,7 +326,8 @@ const taskForm = reactive({
   target: '',
   create_time: '',
   close_time: '',
-  tagIds: []
+  tagIds: [],
+  workload: 0
 })
 
 const statusForm = reactive({ taskId: null, currentStatus: '', newStatus: '' })
@@ -366,7 +404,7 @@ const getImportanceTagType = importance => {
 const handleDetail = async (row) => {
   detailData.value = row
   feedbackContent.value = ''
-  // 加载进展记录
+  feedbackProgress.value = row.progress || 0
   await loadProgressList(row.id)
   detailVisible.value = true
 }
@@ -405,11 +443,28 @@ const submitProgress = async () => {
   }
   await axios.post('/api/task/progress/add', {
     taskId: detailData.value.id,
-    content: feedbackContent.value
+    content: feedbackContent.value,
+    progress: feedbackProgress.value
   })
   ElMessage.success('提交成功')
   feedbackContent.value = ''
+  // 同步更新列表中的进度
+  detailData.value.progress = feedbackProgress.value
   loadProgressList(detailData.value.id)
+  getList()
+}
+
+// 删除进展记录
+const handleDeleteProgress = async (progressId) => {
+  try {
+    await ElMessageBox.confirm('确定删除该进展记录？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  await axios.delete(`/api/task/progress/delete/${progressId}`)
+  ElMessage.success('删除成功')
+  loadProgressList(detailData.value.id)
+  getList()
 }
 
 // 删除
@@ -450,7 +505,7 @@ const handleUpdateStatus = async () => {
 const handleAdd = () => {
   isEdit.value = false
   Object.assign(taskForm, {
-    title: '', importance: '', target: '', create_time: '', close_time: '', tagIds: []
+    title: '', importance: '', target: '', create_time: '', close_time: '', tagIds: [], workload: 0
   })
   taskDialogVisible.value = true
 }
@@ -462,6 +517,7 @@ const handleEdit = (row) => {
   taskForm.title = row.title || ''
   taskForm.importance = row.importance || ''
   taskForm.target = row.target || ''
+  taskForm.workload = row.workload || 0
   taskForm.create_time = row.create_time ? row.create_time + ' 00:00:00' : ''
   taskForm.close_time = row.close_time ? row.close_time + ' 00:00:00' : ''
   try {
@@ -492,6 +548,8 @@ const getList = async () => {
       item.create_time = dateFormatter(item.create_time)
       item.close_time = dateFormatter(item.close_time)
       item.remainDays = getRemainDays(item)
+      item.progress = item.progress || 0
+      item.workload = item.workload || 0
       return item
     })
   }
@@ -584,6 +642,20 @@ const sortStatus = (a, b) => {
 const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)
 const sortNumber = (a, b) => a.remainDays - b.remainDays
 
+const customProgressColor = (percentage) => {
+  if (percentage >= 100) return '#67c23a'
+  if (percentage >= 60) return '#409eff'
+  if (percentage >= 30) return '#e6a23c'
+  return '#f56c6c'
+}
+
+const tableRowClassName = ({ row }) => {
+  if (row.remainDays < 0 && row.status !== '已完成') {
+    return 'row-overdue'
+  }
+  return ''
+}
+
 // 加载标签
 const loadTagList = async () => {
   const { data } = await axios.get('/api/tags')
@@ -649,6 +721,28 @@ const computeStats = computed(() => {
   monthDone.value = monthList.filter(i => i.status === '已完成').length
 })
 
+const totalWorkload = computed(() => {
+  return taskList.value.reduce((sum, item) => sum + (parseFloat(item.workload) || 0), 0).toFixed(1)
+})
+
+const avgProgress = computed(() => {
+  const unfinished = taskList.value.filter(i => i.status !== '已完成')
+  if (unfinished.length === 0) return 0
+  return Math.round(unfinished.reduce((sum, i) => sum + (parseInt(i.progress) || 0), 0) / unfinished.length)
+})
+
+const monthDoneRate = computed(() => {
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  const monthTasks = taskList.value.filter(i => {
+    const d = new Date(i.create_time)
+    return d.getFullYear() === currentYear && d.getMonth() === currentMonth
+  })
+  if (monthTasks.length === 0) return 0
+  return Math.round(monthTasks.filter(i => i.status === '已完成').length / monthTasks.length * 100)
+})
+
 // 监听列表变化自动更新统计
 watch(
   () => filteredList.value,
@@ -697,6 +791,9 @@ watch(
   gap: 6px;
 }
 
+:deep(.row-overdue) { background-color: #fef0f0 !important; }
+:deep(.row-overdue td) { background-color: transparent !important; }
+
 /* 详情样式 */
 .detail-box {
   padding: 5px;
@@ -723,6 +820,11 @@ watch(
 .progress-item .content {
   line-height: 1.4;
 }
+
+.progress-item-body { display: flex; align-items: center; justify-content: space-between; }
+.progress-item-body .content { flex: 1; }
+.delete-progress-btn { flex-shrink: 0; margin-left: 8px; opacity: 0.6; }
+.delete-progress-btn:hover { opacity: 1; }
 
 /* 彩色标签 */
 :deep(.custom-tag) {
@@ -817,6 +919,17 @@ watch(
     font-size: 12px;
     color: #94a3b8;
     margin-bottom: 6px;
+  }
+
+  .mobile-task-card .card-row {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 6px;
+  }
+
+  .mobile-task-card .card-row .card-label {
+    color: #64748b;
+    margin-right: 6px;
   }
 
   .mobile-task-card .card-tags {

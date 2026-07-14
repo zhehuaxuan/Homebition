@@ -1,7 +1,7 @@
 # Homebition 设计文档知识库
 
 > **项目**: Homebition — 个人全栈站点
-> **更新**: 2026-07-13
+> **更新**: 2026-07-14
 
 ## 目录结构
 
@@ -39,7 +39,7 @@ docs/superpowers/
 ## 文档清单
 
 ### 需求分析
-- [需求分析文档](./specs/requirements/requirements-analysis.md) — 原始需求→验收标准→实现映射、需求-模块矩阵（REQ-001~019）
+- [需求分析文档](./specs/requirements/requirements-analysis.md) — 原始需求→验收标准→实现映射、需求-模块矩阵（REQ-001~020）
 - [需求开发流程](./specs/requirements/workflow.md) — 新需求从提出→设计→归档到知识库的标准工作流
 
 ### 架构设计
@@ -51,6 +51,7 @@ docs/superpowers/
 - [任务管理模块](./specs/modules/task-module.md) — 甘特图/表格视图、标签、进展跟踪
 - [邮件订阅模块](./specs/modules/subscription-module.md) — 订阅任务、邮箱管理、EJS 模板、外部接口
 - [投资频道模块](./specs/modules/invest-module.md) — AI 公司验证+评估、限流、错误日志
+- [日志模块](./specs/modules/logging-module.md) — winston 日志 + 请求中间件 + Axios 拦截器
 
 ### API 接口设计
 - [API 端点文档](./specs/api/api-endpoints.md) — 全量接口定义（50+ API），含请求/响应格式

@@ -16,6 +16,7 @@ Homebition 是一个**个人全栈站点**，诞生于 2026-04-01。站点承载
 
 | 模块 | 功能描述 | 面向用户 |
 |------|----------|----------|
+| 日志系统 | winston 统一日志 + 请求日志中间件 + Axios 拦截器 | 全栈 |
 | 首页 | 个人简介、联系方式、作品导航 | 访客 |
 | 文章系统 | 富文本编辑、GitHub 文章同步、列表浏览 | 管理员 + 访客 |
 | 任务管理 | 甘特图/表格视图、标签系统、进展跟踪、状态流转 | 管理员 |
@@ -60,7 +61,8 @@ Homebition 是一个**个人全栈站点**，诞生于 2026-04-01。站点承载
 | **EJS** | ^6.0.1 | 模板引擎 | 语法简单、可直接在 HTML 中嵌入 |
 | **multer** | ^2.1.1 | 文件上传 | 支持 multipart/form-data、磁盘存储 |
 | **cheerio** | ^1.2.0 | HTML 解析 | 类 jQuery API、服务端 DOM 操作 |
-| **xml2js** | ^0.6.2 | XML 解析（AI 配置） | 读取 XML 格式的 AI API 配置 |
+| **winston** | ^3.17 | 日志框架 | Express 生态标配、按日轮转、多传输通道 |
+| **winston-daily-rotate-file** | ^5.0 | 日志文件轮转 | 按日期自动分割日志文件 |
 
 ### 2.3 AI 集成
 
@@ -246,11 +248,12 @@ Index.vue (根组件)
   → 超时中间件 (res.setTimeout(300000))
   → DB 挂载中间件 (req.db = pool)
   → express.json()
-  → 各路由中间件
+  → 请求日志中间件 (requestLogger, 记录 method/url/status/duration)
+  → Token 校验中间件 (authMiddleware, Bearer token 白名单)
+  → 各路由处理
+  → 全局错误处理中间件（未捕获异常兜底）
   → 响应
 ```
-
-当前无全局认证中间件、无错误处理中间件、无请求日志中间件。
 
 ### 4.4 服务层
 
@@ -259,7 +262,8 @@ Index.vue (根组件)
 | 文件 | 导出函数 | 说明 |
 |------|----------|------|
 | `mail.js` | `initTransporter(config)`, `sendMail(options)` | nodemailer 封装、EJS 模板渲染 |
-| `deepseek.js` | `loadConfig()`, `verifyCompany(query)`, `evaluateCompany(name, code)` | AI API 调用（DeepSeek / MiniMax） |
+| `deepseek.js` | `verifyCompany(query)`, `evaluateCompany(name, code)` | AI API 调用（DeepSeek / MiniMax） |
+| `logger.js` | `logger.info()`, `logger.warn()`, `logger.error()` | winston 日志封装（console + 文件轮转） |
 
 服务层被路由层直接调用（`require`），无依赖注入层。
 
@@ -685,22 +689,16 @@ const pool = mysql.createPool({
 
 ### 9.3 AI API 配置
 
-`server/config/deepseek.xml`（XML 格式）:
+配置已迁移至环境变量（`.env` 文件），不再使用 XML 文件：
 
-```xml
-<config>
-  <deepseek>
-    <baseurl>https://api.deepseek.com/v1</baseurl>
-    <apikey>xxx</apikey>
-    <model>deepseek-chat</model>
-  </deepseek>
-  <minimax>
-    <baseurl>https://api.minimax.chat/v1</baseurl>
-    <apikey>xxx</apikey>
-    <model>minimax-text-01</model>
-  </minimax>
-</config>
-```
+| 变量 | 用途 |
+|------|------|
+| `DEEPSEEK_BASEURL` | DeepSeek API 地址 |
+| `DEEPSEEK_API_KEY` | DeepSeek API 密钥 |
+| `DEEPSEEK_MODEL` | DeepSeek 模型名称 |
+| `MINIMAX_BASEURL` | MiniMax API 地址 |
+| `MINIMAX_API_KEY` | MiniMax API 密钥 |
+| `MINIMAX_MODEL` | MiniMax 模型名称 |
 
 ### 9.4 开发环境配置
 
@@ -717,15 +715,15 @@ const pool = mysql.createPool({
 ### 安全风险 (高优先)
 1. **密码明文存储** → 使用 bcrypt/scrypt 哈希存储
 2. **无 JWT 认证** → token 为简单 Base64，无签名、无过期
-3. **无 API 认证中间件** → 后端接口无 token 校验
+3. ~~**无 API 认证中间件**~~ → ✅ 已治理（REQ-016，`middleware/auth.js`）
 
 ### 架构改进 (中优先)
 4. **统一错误码** → 当前 `code` 字段存在 0/200/1/400/401/500 等多套体系
-5. **配置文件外置** → 数据库密码、AI Key 等硬编码在源码中
-6. **引入 .env** → 替代硬编码配置
+5. ~~**配置文件外置**~~ → ✅ 已治理（REQ-016，迁移至 `.env`）
+6. ~~**引入 .env**~~ → ✅ 已治理（REQ-016）
 7. **定时调度** → 邮件订阅的自动化推送未实现
 
 ### 代码质量 (低优先)
-8. `user` 表双字段兼容 → 统一为 `username`
+8. ~~**`user` 表双字段兼容**~~ → ✅ 已治理（REQ-016，统一为 `username`）
 9. JSON 字段 → 考虑迁移为 MySQL JSON 类型或关联表
 10. LONGTEXT content → 文章内容量大时考虑分表或对象存储

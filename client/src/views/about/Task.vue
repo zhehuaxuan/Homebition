@@ -74,20 +74,20 @@
           <span>{{ scope.row.progress || 0 }}%</span>
         </template>
       </el-table-column>
-      <el-table-column prop="remainDays" label="剩余天数" width="95" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
+      <el-table-column prop="remainDays" label="剩余" width="75" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
         <template #default="scope">
           <span :class="{ 'text-overdue': scope.row.remainDays < 0 && scope.row.status !== '已完成' }">
-            {{ scope.row.remainDays }}
+            {{ scope.row.remainDays }}天
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="240" fixed="right">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
           <el-button size="small" type="warning" @click="handleEdit(scope.row)">修改</el-button>
 
           <el-dropdown @command="(cmd) => handleMoreAction(cmd, scope.row)">
-            <el-button size="small" type="info" text>
+            <el-button size="small" type="info">
               更多
               <el-icon class="el-icon--right">
                 <ArrowDown />

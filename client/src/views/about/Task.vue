@@ -83,24 +83,25 @@
       </el-table-column>
       <el-table-column label="操作" width="240" fixed="right">
         <template #default="scope">
-          <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
-          <el-button size="small" type="warning" @click="handleEdit(scope.row)">修改</el-button>
-
-          <el-dropdown @command="(cmd) => handleMoreAction(cmd, scope.row)">
-            <el-button size="small" type="info">
-              更多
-              <el-icon class="el-icon--right">
-                <ArrowDown />
-              </el-icon>
-            </el-button>
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="status">修改状态</el-dropdown-item>
-                <el-dropdown-item command="delay">延期</el-dropdown-item>
-                <el-dropdown-item command="delete" divided type="danger">删除</el-dropdown-item>
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
+          <div class="action-btns">
+            <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
+            <el-button size="small" type="warning" @click="handleEdit(scope.row)">修改</el-button>
+            <el-dropdown @command="(cmd) => handleMoreAction(cmd, scope.row)">
+              <el-button size="small" type="info">
+                更多
+                <el-icon class="el-icon--right">
+                  <ArrowDown />
+                </el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="status">修改状态</el-dropdown-item>
+                  <el-dropdown-item command="delay">延期</el-dropdown-item>
+                  <el-dropdown-item command="delete" divided type="danger">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -802,6 +803,8 @@ watch(
 :deep(.row-overdue) .el-table-column--selection .cell { display: none; }
 
 .text-overdue { color: #f56c6c; font-weight: bold; }
+
+.action-btns { display: flex; align-items: center; gap: 8px; }
 
 /* 详情样式 */
 .detail-box {

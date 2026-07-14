@@ -77,7 +77,7 @@
       <el-table-column prop="remainDays" label="剩余天数" width="90" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
         <template #default="scope">
           <span :class="{ 'text-overdue': scope.row.remainDays < 0 && scope.row.status !== '已完成' }">
-            {{ scope.row.remainDays }}天天
+            {{ scope.row.remainDays }}天
           </span>
         </template>
       </el-table-column>

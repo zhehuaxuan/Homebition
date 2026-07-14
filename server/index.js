@@ -10,7 +10,7 @@ const logger = require('./services/logger');
 // 设置 Express 超时为 5 分钟
 app.use((req, res, next) => {
   res.setTimeout(300000, () => {
-    console.log('请求超时');
+    logger.warn('[http] 请求超时');
   });
   next();
 });
@@ -38,12 +38,12 @@ app.use((req, res, next) => {
 // 4. 解析 JSON（必须写在挂载 db 之后、路由之前）
 app.use(express.json());
 
-// 4.5 Token 校验中间件（必须在路由之前）
+// 4.5 请求日志（记录所有 HTTP 请求，必须在 auth 之前以记录被拒绝的请求）
+app.use(requestLogger);
+
+// 4.6 Token 校验中间件（必须在路由之前）
 const authMiddleware = require('./middleware/auth');
 app.use(authMiddleware);
-
-// 4.6 请求日志（记录所有 HTTP 请求）
-app.use(requestLogger);
 
 // 5. 加载路由（最后加载路由！）
 const tagRouter = require('./routes/tag');

@@ -1,7 +1,7 @@
 # 日志规范
 
 > **适用范围**: server/ 目录下的所有后端代码
-> **当前方案**: `console.log` / `console.error` 直接输出
+> **当前方案**: winston（服务端）+ Axios 拦截器（客户端）
 
 ---
 

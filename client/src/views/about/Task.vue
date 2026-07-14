@@ -29,9 +29,9 @@
     </div>
 
     <div class="table-container">
-    <el-table :data="filteredList" border stripe style="width: 100%" @sort-change="handleSortChange" :row-class-name="tableRowClassName">
-      <el-table-column prop="title" label="任务名称" />
-      <el-table-column label="目标" prop="target" min-width="160" class-name="hide-on-mobile">
+    <el-table :data="filteredList" border style="width: 100%" @sort-change="handleSortChange" :row-class-name="tableRowClassName">
+      <el-table-column prop="title" label="任务名称" min-width="140" />
+      <el-table-column label="目标" prop="target" min-width="140" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tooltip placement="top-start" :width="360" effect="light" :disabled="!scope.row.target">
             <template #content>
@@ -43,17 +43,17 @@
           </el-tooltip>
         </template>
       </el-table-column>
-      <el-table-column prop="importance" label="重要性" sortable :sort-method="sortImportance" class-name="hide-on-mobile">
+      <el-table-column prop="importance" label="重要性" width="80" sortable :sort-method="sortImportance" class-name="hide-on-mobile">
         <template #default="scope">
           <el-tag :type="getImportanceTagType(scope.row.importance)" size="small">{{ scope.row.importance }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="workload" label="工作量(人天)" width="110" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
+      <el-table-column prop="workload" label="工作量" width="80" class-name="hide-on-mobile" sortable :sort-method="sortNumber">
         <template #default="scope">
-          <span>{{ scope.row.workload || 0 }} 人天</span>
+          <span>{{ scope.row.workload || 0 }}d</span>
         </template>
       </el-table-column>
-      <el-table-column prop="tagsShow" label="标签" min-width="150" class-name="hide-on-mobile">
+      <el-table-column prop="tagsShow" label="标签" min-width="130" class-name="hide-on-mobile">
         <template #default="scope">
           <div class="tag-list">
             <el-tag v-for="tag in scope.row.tagsShow" :key="tag" size="small" class="custom-tag">
@@ -62,28 +62,26 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="create_time" label="开始日期" class-name="hide-on-mobile" />
-      <el-table-column prop="close_time" label="闭环日期" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
-      <el-table-column prop="status" label="状态" sortable :sort-method="sortStatus">
+      <el-table-column prop="create_time" label="开始日期" width="100" class-name="hide-on-mobile" />
+      <el-table-column prop="close_time" label="闭环日期" width="100" sortable :sort-method="sortDate" class-name="hide-on-mobile" />
+      <el-table-column prop="status" label="状态" width="80" sortable :sort-method="sortStatus">
         <template #default="scope">
           <el-tag :type="getStatusCodeType(scope.row.status)" effect="plain">{{ scope.row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="progress" label="进度" width="80" sortable :sort-method="sortNumber">
+      <el-table-column prop="progress" label="进度" width="70" sortable :sort-method="sortNumber">
         <template #default="scope">
-          <span :style="{ color: scope.row.status === '已完成' ? '#67c23a' : (scope.row.remainDays < 0 ? '#f56c6c' : '#333'), fontWeight: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? 'bold' : 'normal' }">
-            {{ scope.row.progress || 0 }}%
-          </span>
+          <span>{{ scope.row.progress || 0 }}%</span>
         </template>
       </el-table-column>
-      <el-table-column prop="remainDays" label="剩余时间（天）" min-width="110" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
+      <el-table-column prop="remainDays" label="剩余天数" width="80" sortable :sort-method="sortNumber" class-name="hide-on-mobile">
         <template #default="scope">
-          <span :style="{ color: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? '#f56c6c' : '#333', fontWeight: scope.row.remainDays < 0 && scope.row.status !== '已完成' ? 'bold' : 'normal' }">
+          <span :class="{ 'text-overdue': scope.row.remainDays < 0 && scope.row.status !== '已完成' }">
             {{ scope.row.remainDays }}
           </span>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" align="center">
+      <el-table-column label="操作" width="200" fixed="right">
         <template #default="scope">
           <el-button size="small" type="primary" @click="handleDetail(scope.row)">详情</el-button>
           <el-button size="small" type="warning" @click="handleEdit(scope.row)">修改</el-button>
@@ -800,7 +798,10 @@ watch(
 }
 
 :deep(.row-overdue) { background-color: #fef0f0 !important; }
-:deep(.row-overdue td) { background-color: transparent !important; }
+:deep(.row-overdue) td { background-color: #fef0f0 !important; color: #333 !important; }
+:deep(.row-overdue) .el-table-column--selection .cell { display: none; }
+
+.text-overdue { color: #f56c6c; font-weight: bold; }
 
 /* 详情样式 */
 .detail-box {

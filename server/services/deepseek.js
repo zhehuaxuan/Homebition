@@ -1,27 +1,21 @@
-const fs = require('fs');
-const path = require('path');
-const xml2js = require('xml2js');
 const axios = require('axios');
+const logger = require('../services/logger');
 
 let config = null;
 
 const loadConfig = async () => {
     if (config) return config;
 
-    const configPath = path.join(__dirname, '../config/deepseek.xml');
-    const xmlContent = fs.readFileSync(configPath, 'utf-8');
-    const result = await xml2js.parseStringPromise(xmlContent);
-
     config = {
         deepseek: {
-            baseUrl: result.config.deepseek[0].baseurl[0],
-            apiKey: result.config.deepseek[0].apikey[0],
-            model: result.config.deepseek[0].model[0]
+            baseUrl: process.env.DEEPSEEK_BASEURL || 'https://api.deepseek.com',
+            apiKey: process.env.DEEPSEEK_API_KEY || '',
+            model: process.env.DEEPSEEK_MODEL || 'deepseek-v4-flash'
         },
         minimax: {
-            baseUrl: result.config.minimax[0].baseurl[0],
-            apiKey: result.config.minimax[0].apikey[0],
-            model: result.config.minimax[0].model[0]
+            baseUrl: process.env.MINIMAX_BASEURL || 'https://topapi.link/v1',
+            apiKey: process.env.MINIMAX_API_KEY || '',
+            model: process.env.MINIMAX_MODEL || 'MiniMax-M3'
         }
     };
 
@@ -61,13 +55,11 @@ const verifyCompany = async (query) => {
         });
 
         const content = response.data.choices[0].message.content.trim();
-        console.log('DeepSeek 返回内容:', content);
 
         // 解析 JSON
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             const jsonStr = jsonMatch[0];
-            console.log('解析的 JSON:', jsonStr);
             return JSON.parse(jsonStr);
         }
 
@@ -161,7 +153,6 @@ const evaluateCompany = async (companyName, companyCode) => {
             timeout: 300000, // 5分钟超时
             responseType: 'stream'
         }).then(response => {
-            console.log('MiniMax 状态码:', response.status);
 
             response.data.on('data', (chunk) => {
                 chunks.push(chunk);
@@ -169,7 +160,6 @@ const evaluateCompany = async (companyName, companyCode) => {
 
             response.data.on('end', () => {
                 const fullData = chunks.join('');
-                console.log('收到 SSE 数据长度:', fullData.length);
 
                 // 解析 SSE 数据
                 let resultContent = '';
@@ -192,12 +182,11 @@ const evaluateCompany = async (companyName, companyCode) => {
                     }
                 }
 
-                console.log('MiniMax 返回内容长度:', resultContent.length);
                 resolve(resultContent);
             });
 
             response.data.on('error', (err) => {
-                console.error('SSE 流错误:', err);
+                logger.error('[ai] SSE 流错误', { error: err.message });
                 reject(err);
             });
         }).catch(err => {

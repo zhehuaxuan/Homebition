@@ -541,8 +541,8 @@ const formatTemplateDate = (date) => {
 const getTemplates = async () => {
   try {
     const { data } = await axios.get('/api/templates')
-    if (data.code === 200) {
-      templateList.value = data.list
+    if (data.code === 0) {
+      templateList.value = data.data
     }
   } catch (err) {
     ElMessage.error('获取模板列表失败')
@@ -559,7 +559,7 @@ const handleAddTemplate = () => {
 const handleViewTemplate = async (row) => {
   try {
     const { data } = await axios.get(`/api/template/${row.name}`)
-    if (data.code === 200) {
+    if (data.code === 0) {
       currentTemplate.value = data
       templateViewVisible.value = true
     }
@@ -571,7 +571,7 @@ const handleViewTemplate = async (row) => {
 const handleEditTemplate = async (row) => {
   try {
     const { data } = await axios.get(`/api/template/${row.name}`)
-    if (data.code === 200) {
+    if (data.code === 0) {
       isTemplateEdit.value = true
       templateForm.name = data.name
       templateForm.content = data.content
@@ -601,7 +601,7 @@ const updateTemplatePreview = () => {
       template: currentTemplate.value.name,
       data: data
     }).then(res => {
-      if (res.data.code === 200) {
+      if (res.data.code === 0) {
         templateRenderedHtml.value = res.data.html
       } else {
         templateRenderedHtml.value = '<div style="color: red; padding: 20px;">渲染失败: ' + (res.data.message || '未知错误') + '</div>'
@@ -744,8 +744,8 @@ const handleSubscriptionTypeChange = () => {
 
 const getSubscriptions = async () => {
   const { data } = await axios.get('/api/subscriptions')
-  if (data.code === 200) {
-    subscriptions.value = data.list
+  if (data.code === 0) {
+    subscriptions.value = data.data
   }
 }
 
@@ -896,8 +896,8 @@ const getMailTypeTag = (type) => {
 
 const getMails = async () => {
   const { data } = await axios.get('/api/mails')
-  if (data.code === 200) {
-    mailList.value = data.list
+  if (data.code === 0) {
+    mailList.value = data.data
   }
 }
 
@@ -996,8 +996,8 @@ const filteredApis = computed(() => {
 const getApis = async () => {
   try {
     const { data } = await axios.get('/api/apis')
-    if (data.code === 200) {
-      apiList.value = data.list
+    if (data.code === 0) {
+      apiList.value = data.data
     }
   } catch (err) {
     ElMessage.error('获取接口列表失败')
@@ -1071,7 +1071,7 @@ const handleTestApi = async (row) => {
 
   try {
     const { data } = await axios.post(`/api/api/test/${row.id}`)
-    if (data.code === 200) {
+    if (data.code === 0) {
       testResultData.value = data.data
     } else {
       testResultData.value = { error: data.message || '测试失败' }

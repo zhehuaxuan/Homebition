@@ -21,7 +21,6 @@ router.post('/mail/send-with-template', async (req, res) => {
     }
 
     try {
-        // 获取模板
         const [templates] = await req.db.execute('SELECT * FROM mail_template WHERE code = ?', [templateCode]);
         if (templates.length === 0) {
             return res.status(404).json({
@@ -32,7 +31,6 @@ router.post('/mail/send-with-template', async (req, res) => {
 
         const template = templates[0];
 
-        // 替换变量
         let subject = template.subject;
         let content = template.content;
 
@@ -44,7 +42,6 @@ router.post('/mail/send-with-template', async (req, res) => {
             }
         }
 
-        // 发送邮件
         const { sendMail } = require('../services/mail');
         await sendMail({
             to,
@@ -53,7 +50,7 @@ router.post('/mail/send-with-template', async (req, res) => {
         });
 
         res.json({
-            code: 200,
+            code: 0,
             message: '邮件发送成功'
         });
     } catch (err) {

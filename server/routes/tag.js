@@ -8,10 +8,10 @@ router.get('/tags', async (req, res) => {
     try {
         const sql = 'SELECT * FROM tag ORDER BY create_time DESC';
         const [rows] = await req.db.query(sql);
-        res.json({ list: rows });
+        res.json({ code: 0, data: rows });
     } catch (err) {
         console.log(err)
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ code: 500, message: err.message });
     }
 });
 
@@ -20,18 +20,19 @@ router.get('/tags', async (req, res) => {
 // ======================================
 router.post('/tag/add', async (req, res) => {
     const { name } = req.body;
-    if (!name) return res.status(400).json({ message: '标签名称不能为空' });
+    if (!name) return res.status(400).json({ code: 400, message: '标签名称不能为空' });
 
     try {
         const sql = 'INSERT INTO tag (name) VALUES (?)';
         const [result] = await req.db.query(sql, [name]);
 
         res.json({
+            code: 0,
             message: '新增成功',
-            id: result.insertId,
+            data: { id: result.insertId },
         });
     } catch (err) {
-        res.status(500).json({ message: '标签已存在或添加失败' });
+        res.status(500).json({ code: 500, message: '标签已存在或添加失败' });
     }
 });
 
@@ -46,11 +47,11 @@ router.delete('/tag/delete/:id', async (req, res) => {
         const [result] = await req.db.query(sql, [id]);
 
         if (result.affectedRows === 0) {
-            return res.json({ message: '标签不存在' });
+            return res.status(404).json({ code: 404, message: '标签不存在' });
         }
-        res.json({ message: '删除成功' });
+        res.json({ code: 0, message: '删除成功' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ code: 500, message: err.message });
     }
 });
 
@@ -60,7 +61,7 @@ router.put('/tag/update/:id', async (req, res) => {
     const { name } = req.body;
 
     if (!name) {
-        return res.status(400).json({ message: '标签名称不能为空' });
+        return res.status(400).json({ code: 400, message: '标签名称不能为空' });
     }
 
     try {
@@ -68,11 +69,11 @@ router.put('/tag/update/:id', async (req, res) => {
         const [result] = await req.db.query(sql, [name, id]);
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: '标签不存在' });
+            return res.status(404).json({ code: 404, message: '标签不存在' });
         }
-        res.json({ message: '修改成功' });
+        res.json({ code: 0, message: '修改成功' });
     } catch (err) {
-        res.status(500).json({ message: '修改失败：' + err.message });
+        res.status(500).json({ code: 500, message: '修改失败：' + err.message });
     }
 });
 

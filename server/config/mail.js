@@ -1,17 +1,12 @@
-// 邮件服务配置
+// 邮件服务配置（从环境变量读取）
 const mailConfig = {
-    // 启用邮件服务（设置为 true 并配置下方参数）
     enabled: true,
-
-    // SMTP 配置
-    host: 'smtp.aliyun.com',      // 邮件服务器地址
-    port: 465,                      // 端口（465 为 SSL）
-    secure: true,                   // true for 465, false for other ports
-    user: 'zhehuaxuan@aliyun.com', // 邮箱账号
-    pass: '224539xzh',          // 邮箱密码或授权码
-
-    // 发件人信息
-    from: '"Homebition" <zhehuaxuan@aliyun.com>'
+    host: process.env.MAIL_HOST || 'smtp.aliyun.com',
+    port: parseInt(process.env.MAIL_PORT || '465', 10),
+    secure: process.env.MAIL_SECURE !== 'false',
+    user: process.env.MAIL_USER || 'zhehuaxuan@aliyun.com',
+    pass: process.env.MAIL_PASS || '224539xzh',
+    from: process.env.MAIL_FROM || '"Homebition" <zhehuaxuan@aliyun.com>'
 };
 
 module.exports = mailConfig;

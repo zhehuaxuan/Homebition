@@ -85,9 +85,9 @@ router.post('/invest/verify-company', async (req, res) => {
         const { query } = req.body;
 
         if (!query || !query.trim()) {
-            return res.json({
-                code: 1,
-                msg: '请输入公司名称或代码'
+            return res.status(400).json({
+                code: 400,
+                message: '请输入公司名称或代码'
             });
         }
 
@@ -99,9 +99,9 @@ router.post('/invest/verify-company', async (req, res) => {
         });
     } catch (error) {
         console.error('验证公司失败:', error);
-        res.json({
-            code: 1,
-            msg: '验证失败，请稍后重试'
+        res.status(500).json({
+            code: 500,
+            message: '验证失败，请稍后重试'
         });
     }
 });
@@ -112,7 +112,7 @@ router.post('/invest/evaluate', async (req, res) => {
     if (!checkRateLimit(req)) {
         return res.status(429).json({
             code: 429,
-            msg: '请求过于频繁，请稍后再试'
+            message: '请求过于频繁，请稍后再试'
         });
     }
 
@@ -120,9 +120,9 @@ router.post('/invest/evaluate', async (req, res) => {
         const { name, code } = req.body;
 
         if (!name) {
-            return res.json({
-                code: 1,
-                msg: '请提供公司名称'
+            return res.status(400).json({
+                code: 400,
+                message: '请提供公司名称'
             });
         }
 
@@ -150,9 +150,9 @@ router.post('/invest/evaluate', async (req, res) => {
             errorMsg = '评估结果过长，请稍后重试';
         }
 
-        res.json({
-            code: 1,
-            msg: errorMsg
+        res.status(500).json({
+            code: 500,
+            message: errorMsg
         });
     }
 });

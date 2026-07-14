@@ -123,7 +123,7 @@ const getList = async () => {
   loading.value = true
   try {
     const res = await axios.get('/api/tags')
-    const list = res?.data?.list || []
+    const list = res?.data?.data || []
 
     const filteredList = list.filter(item => {
       if (!searchKey.value) return true;

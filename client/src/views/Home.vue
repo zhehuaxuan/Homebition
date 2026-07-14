@@ -156,7 +156,7 @@ const profile = ref('')
 const fetchProfile = async () => {
     try {
         const res = await axios.get('/api/auth/profile')
-        if (res.data.code === 200) {
+        if (res.data.code === 0) {
             profile.value = res.data.data.profile
         }
     } catch (err) {
@@ -182,11 +182,6 @@ onMounted(() => {
     align-items: center;
     font-size: 0.9rem;
     color: var(--text-secondary);
-}
-
-.biography {
-    max-height: 100px;
-    overflow: hidden;
 }
 
 @media (max-width: 480px) {

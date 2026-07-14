@@ -376,7 +376,7 @@ const loadProgressList = async (taskId) => {
   try {
     const { data } = await axios.get(`/api/task/progress/${taskId}`)
     // 格式化时间
-    progressList.value = (data.list || []).map(item => {
+    progressList.value = (data.data || []).map(item => {
       item.create_time = formatDateTime(item.create_time)
       return item
     })
@@ -482,17 +482,19 @@ const resetQuery = () => {
 // 获取任务列表
 const getList = async () => {
   const { data } = await axios.get('/api/tasks')
-  taskList.value = (data.list || []).map(item => {
-    if (item.status === 0) item.status = '待启动'
-    else if (item.status === 1) item.status = '进行中'
-    else if (item.status === 2) item.status = '已完成'
-    else if (item.status === 3) item.status = '挂起中'
-    item.tagsShow = loadTagsByTask(item.tags, tagList.value)
-    item.create_time = dateFormatter(item.create_time)
-    item.close_time = dateFormatter(item.close_time)
-    item.remainDays = getRemainDays(item)
-    return item
-  })
+  if (data.code === 0) {
+    taskList.value = (data.data || []).map(item => {
+      if (item.status === 0) item.status = '待启动'
+      else if (item.status === 1) item.status = '进行中'
+      else if (item.status === 2) item.status = '已完成'
+      else if (item.status === 3) item.status = '挂起中'
+      item.tagsShow = loadTagsByTask(item.tags, tagList.value)
+      item.create_time = dateFormatter(item.create_time)
+      item.close_time = dateFormatter(item.close_time)
+      item.remainDays = getRemainDays(item)
+      return item
+    })
+  }
 }
 
 // 日期格式化
@@ -585,7 +587,9 @@ const sortNumber = (a, b) => a.remainDays - b.remainDays
 // 加载标签
 const loadTagList = async () => {
   const { data } = await axios.get('/api/tags')
-  tagList.value = data.list || []
+  if (data.code === 0) {
+    tagList.value = data.data || []
+  }
 }
 
 onMounted(async () => {

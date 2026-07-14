@@ -28,7 +28,7 @@ router.get('/templates', async (req, res) => {
                 preview: content.substring(0, 100).replace(/\s+/g, ' ')
             };
         });
-        res.json({ code: 200, list: templates });
+        res.json({ code: 0, data: templates });
     } catch (err) {
         console.error('获取模板列表失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -47,7 +47,7 @@ router.get('/template/:name', async (req, res) => {
             return res.status(404).json({ code: 404, message: '模板不存在' });
         }
         const content = fs.readFileSync(filePath, 'utf8');
-        res.json({ code: 200, name, content });
+        res.json({ code: 0, name, content });
     } catch (err) {
         console.error('获取模板内容失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -72,7 +72,7 @@ router.post('/template', async (req, res) => {
 
     try {
         fs.writeFileSync(filePath, content, 'utf8');
-        res.json({ code: 200, message: '创建成功', name });
+        res.json({ code: 0, message: '创建成功', name });
     } catch (err) {
         console.error('创建模板失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -95,7 +95,7 @@ router.put('/template/:name', async (req, res) => {
 
     try {
         fs.writeFileSync(filePath, content, 'utf8');
-        res.json({ code: 200, message: '更新成功' });
+        res.json({ code: 0, message: '更新成功' });
     } catch (err) {
         console.error('更新模板失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -119,7 +119,7 @@ router.delete('/template/:name', async (req, res) => {
         }
 
         fs.unlinkSync(filePath);
-        res.json({ code: 200, message: '删除成功' });
+        res.json({ code: 0, message: '删除成功' });
     } catch (err) {
         console.error('删除模板失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -142,7 +142,7 @@ router.post('/template/render', async (req, res) => {
     try {
         const templateContent = fs.readFileSync(filePath, 'utf8');
         const html = ejs.render(templateContent, data || {});
-        res.json({ code: 200, html });
+        res.json({ code: 0, html });
     } catch (err) {
         console.error('渲染模板失败:', err);
         res.status(500).json({ code: 500, message: '渲染失败: ' + err.message });

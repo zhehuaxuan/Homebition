@@ -167,7 +167,7 @@ const fetchArticles = async () => {
 
         const res = await axios.get('/api/article/list')
         if (res.data.code === 0) {
-            articles.value = res.data.rows
+            articles.value = res.data.data
         } else {
             error.value = '加载文章失败'
         }

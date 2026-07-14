@@ -127,7 +127,7 @@ async function handleSubmit() {
       alert('修改成功！')
       rollback()
     } else {
-      alert('修改失败：' + res.data.msg)
+      alert('修改失败：' + res.data.message)
     }
   } catch (err) {
     console.error(err)

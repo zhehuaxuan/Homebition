@@ -5,16 +5,16 @@ const router = express.Router();
 router.get('/tasks', async (req, res) => {
   try {
     const [rows] = await req.db.query('SELECT * FROM task ORDER BY create_time DESC');
-    res.json({ list: rows });
+    res.json({ code: 0, data: rows });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ code: 500, message: err.message });
   }
 });
 
 // 新增任务
 router.post('/task/add', async (req, res) => {
   const { title, target, create_time, close_time, status, importance, tagIds } = req.body;
-  if (!title) return res.status(400).json({ message: '任务名称不能为空' });
+  if (!title) return res.status(400).json({ code: 400, message: '任务名称不能为空' });
 
   try {
     const sql = `INSERT INTO task (title, target, create_time, close_time, tags, status,importance) VALUES (?, ?, ?, ?, ?, ?, ?)`;
@@ -28,9 +28,9 @@ router.post('/task/add', async (req, res) => {
       importance
     ]);
 
-    res.json({ message: '新增成功', id: result.insertId });
+    res.json({ code: 0, message: '新增成功', data: { id: result.insertId } });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ code: 500, message: err.message });
   }
 });
 
@@ -43,7 +43,7 @@ router.post('/task/progress/add', async (req, res) => {
     const { taskId, content } = req.body;
 
     if (!taskId || !content) {
-      return res.json({ code: 400, msg: '参数缺失' });
+      return res.status(400).json({ code: 400, message: '参数缺失' });
     }
     // 插入 taskdetail 表
     const [result] = await req.db.query(
@@ -52,13 +52,13 @@ router.post('/task/progress/add', async (req, res) => {
     );
 
     res.json({
-      code: 200,
-      msg: '进展提交成功',
+      code: 0,
+      message: '进展提交成功',
       data: result.insertId,
     });
   } catch (err) {
     console.error(err);
-    res.json({ code: 500, msg: '提交失败' });
+    res.status(500).json({ code: 500, message: '提交失败' });
   }
 });
 
@@ -75,12 +75,12 @@ router.get('/task/progress/:taskId', async (req, res) => {
     );
 
     res.json({
-      code: 200,
-      list: rows,
+      code: 0,
+      data: rows,
     });
   } catch (err) {
     console.error(err);
-    res.json({ code: 500, list: [] });
+    res.status(500).json({ code: 500, data: [] });
   }
 });
 
@@ -90,14 +90,14 @@ router.post('/task/update', async (req, res) => {
 
   // 1. 必传参数校验
   if (!id || !title || !importance || !create_time || !close_time) {
-    return res.status(400).json({ message: '缺少必填参数' });
+    return res.status(400).json({ code: 400, message: '缺少必填参数' });
   }
 
   try {
     // 2. 更新任务主表
     const updateSql = `
-      UPDATE task 
-      SET 
+      UPDATE task
+      SET
         title = ?,
         importance = ?,
         target = ?,
@@ -118,14 +118,14 @@ router.post('/task/update', async (req, res) => {
     ]);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: '任务不存在' });
+      return res.status(404).json({ code: 404, message: '任务不存在' });
     }
 
-    res.json({ message: '任务修改成功' });
+    res.json({ code: 0, message: '任务修改成功' });
 
   } catch (err) {
     console.error('修改任务失败：', err);
-    res.status(500).json({ message: '服务器异常：' + err.message });
+    res.status(500).json({ code: 500, message: '服务器异常：' + err.message });
   }
 });
 
@@ -147,7 +147,7 @@ router.post('/task/delay', async (req, res) => {
       return res.status(404).json({ code: 404, message: '任务不存在' })
     }
 
-    return res.json({ code: 200, message: '延期成功' })
+    return res.json({ code: 0, message: '延期成功' })
 
   } catch (err) {
     console.error(err)
@@ -193,7 +193,7 @@ router.post('/task/updateStatus', async (req, res) => {
 
     // 5. 返回成功
     return res.json({
-      code: 200,
+      code: 0,
       message: '状态修改成功'
     })
 
@@ -214,9 +214,9 @@ router.put('/task/update/:id', async (req, res) => {
   try {
     const sql = `UPDATE task SET title=?, target=?, status=? WHERE id=?`;
     await req.db.query(sql, [title, target, status, id]);
-    res.json({ message: '更新成功' });
+    res.json({ code: 0, message: '更新成功' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ code: 500, message: err.message });
   }
 });
 
@@ -224,9 +224,9 @@ router.put('/task/update/:id', async (req, res) => {
 router.delete('/task/delete/:id', async (req, res) => {
   try {
     await req.db.query('DELETE FROM task WHERE id=?', [req.params.id]);
-    res.json({ message: '删除成功' });
+    res.json({ code: 0, message: '删除成功' });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ code: 500, message: err.message });
   }
 });
 

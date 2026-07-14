@@ -165,7 +165,7 @@ function handleGridTaskClick(seg) {
 async function loadProgressList(taskId) {
   try {
     const { data } = await axios.get('/api/task/progress/' + taskId)
-    progressList.value = (data.list || []).map(item => ({ ...item, create_time: fmtDT(item.create_time) }))
+    progressList.value = (data.data || []).map(item => ({ ...item, create_time: fmtDT(item.create_time) }))
   } catch { progressList.value = [] }
 }
 
@@ -402,9 +402,13 @@ watch(taskList, () => { computeStats.value }, { immediate: true })
 const fetchData = async () => {
   try {
     const taskRes = await axios.get('/api/tasks')
-    taskList.value = taskRes.data.list || []
+    if (taskRes.data.code === 0) {
+      taskList.value = taskRes.data.data || []
+    }
     const tagRes = await axios.get('/api/tags')
-    tagList.value = tagRes.data.list || []
+    if (tagRes.data.code === 0) {
+      tagList.value = tagRes.data.data || []
+    }
   } catch (err) {}
 }
 

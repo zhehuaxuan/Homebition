@@ -58,7 +58,7 @@ const handleSend = async () => {
             subject: form.subject,
             content: form.content
         })
-        if (response.data.code === 200) {
+        if (response.data.code === 0) {
             ElMessage.success('邮件发送成功')
         } else {
             ElMessage.error(response.data.message || '发送失败')

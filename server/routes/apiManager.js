@@ -13,7 +13,7 @@ router.post('/api/add', async (req, res) => {
         const sql = `INSERT INTO api_manager (name, path, description, create_time) VALUES (?, ?, ?, NOW())`;
         const [result] = await req.db.query(sql, [name, path, description || '']);
 
-        res.json({ code: 200, message: '创建成功', id: result.insertId });
+        res.json({ code: 0, message: '创建成功', id: result.insertId });
     } catch (err) {
         console.error('创建接口失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -24,7 +24,7 @@ router.post('/api/add', async (req, res) => {
 router.get('/apis', async (req, res) => {
     try {
         const [rows] = await req.db.query('SELECT * FROM api_manager ORDER BY create_time DESC');
-        res.json({ code: 200, list: rows });
+        res.json({ code: 0, data: rows });
     } catch (err) {
         console.error('获取接口列表失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -47,7 +47,7 @@ router.put('/api/update/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ code: 404, message: '接口不存在' });
         }
-        res.json({ code: 200, message: '更新成功' });
+        res.json({ code: 0, message: '更新成功' });
     } catch (err) {
         console.error('更新接口失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -67,7 +67,7 @@ router.delete('/api/delete/:id', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ code: 404, message: '接口不存在' });
         }
-        res.json({ code: 200, message: '删除成功' });
+        res.json({ code: 0, message: '删除成功' });
     } catch (err) {
         console.error('删除接口失败:', err);
         res.status(500).json({ code: 500, message: '服务器异常' });
@@ -105,7 +105,7 @@ router.post('/api/test/:id', async (req, res) => {
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
                 return res.json({
-                    code: 200,
+                    code: 0,
                     message: '失败',
                     data: {
                         error: '该接口不支持 JSON 格式响应，仅支持返回 application/json 的接口',
@@ -120,7 +120,7 @@ router.post('/api/test/:id', async (req, res) => {
             const responseBody = await response.json();
 
             res.json({
-                code: 200,
+                code: 0,
                 message: '成功',
                 data: {
                     status: response.status,
@@ -133,7 +133,7 @@ router.post('/api/test/:id', async (req, res) => {
         } catch (fetchError) {
             // fetch 失败
             res.json({
-                code: 200,
+                code: 0,
                 message: '失败',
                 data: {
                     error: fetchError.message,

@@ -13,21 +13,16 @@ const ADMIN_USER = {
 // 初始化管理员用户
 const initAdminUser = async (db) => {
     try {
-        // 检查 user 表是否有 username 字段
-        const [cols] = await db.execute('SHOW COLUMNS FROM `user`');
-        const hasUsername = cols.some(col => col.Field === 'username');
-        const userField = hasUsername ? 'username' : 'user';
-
         // 检查用户是否已存在
-        const [rows] = await db.execute(`SELECT * FROM \`user\` WHERE \`${userField}\` = ?`, [ADMIN_USER.username]);
+        const [rows] = await db.execute('SELECT * FROM `user` WHERE `username` = ?', [ADMIN_USER.username]);
         if (rows.length === 0) {
             // 插入默认管理员用户
-            const fields = hasUsername ? 'username, password, profile' : 'user, password, profile';
-            const values = hasUsername
-                ? [ADMIN_USER.username, ADMIN_USER.password, ADMIN_USER.profile]
-                : [ADMIN_USER.username, ADMIN_USER.password, ADMIN_USER.profile];
-            await db.execute(`INSERT INTO \`user\` (${fields}) VALUES (?, ?, ?)`, values);
+            await db.execute('INSERT INTO `user` (username, password, profile) VALUES (?, ?, ?)', [ADMIN_USER.username, ADMIN_USER.password, ADMIN_USER.profile]);
             console.log('✅ 管理员用户已初始化: xuanzhehua');
+        } else if (!rows[0].profile) {
+            // 用户已存在但 profile 为空时补充更新
+            await db.execute('UPDATE `user` SET profile = ? WHERE `username` = ?', [ADMIN_USER.profile, ADMIN_USER.username]);
+            console.log('✅ 管理员用户个人介绍已补充');
         }
     } catch (err) {
         console.error('❌ 初始化管理员用户失败:', err);
@@ -70,22 +65,17 @@ router.post('/auth/login', async (req, res) => {
         // 初始化用户（每次登录时检查）
         await initAdminUser(req.db);
 
-        // 检查表结构
-        const [cols] = await req.db.execute('SHOW COLUMNS FROM `user`');
-        const hasUsername = cols.some(col => col.Field === 'username');
-        const userField = hasUsername ? 'username' : 'user';
-
         // 查询用户
-        const [rows] = await req.db.execute(`SELECT * FROM \`user\` WHERE \`${userField}\` = ?`, [username]);
+        const [rows] = await req.db.execute('SELECT * FROM `user` WHERE `username` = ?', [username]);
         const user = rows[0];
 
         if (user && user.password === password) {
             const token = Buffer.from(`${username}:${Date.now()}`).toString('base64');
             res.json({
-                code: 200,
+                code: 0,
                 message: '登录成功',
                 token: token,
-                user: { username: user[userField] }
+                user: { username: user.username }
             });
         } else {
             res.status(401).json({
@@ -105,7 +95,7 @@ router.post('/auth/login', async (req, res) => {
 // 退出接口
 router.post('/auth/logout', (req, res) => {
     res.json({
-        code: 200,
+        code: 0,
         message: '退出成功'
     });
 });
@@ -113,23 +103,19 @@ router.post('/auth/logout', (req, res) => {
 // 获取用户个人信息
 router.get('/auth/profile', async (req, res) => {
     try {
-        const [cols] = await req.db.execute('SHOW COLUMNS FROM `user`');
-        const hasUsername = cols.some(col => col.Field === 'username');
-        const userField = hasUsername ? 'username' : 'user';
-
         // 获取第一个用户的信息
         const [rows] = await req.db.execute(`SELECT * FROM \`user\` LIMIT 1`);
         if (rows.length > 0) {
             res.json({
-                code: 200,
+                code: 0,
                 data: {
-                    username: rows[0][userField],
+                    username: rows[0].username,
                     profile: rows[0].profile || ''
                 }
             });
         } else {
             res.json({
-                code: 200,
+                code: 0,
                 data: {
                     username: '',
                     profile: ''
@@ -183,7 +169,7 @@ router.post('/auth/send-mail', async (req, res) => {
             data
         });
         res.json({
-            code: 200,
+            code: 0,
             message: '邮件发送成功'
         });
     } catch (err) {
@@ -220,7 +206,7 @@ router.get('/auth/test-mail-template', async (req, res) => {
             }
         });
         res.json({
-            code: 200,
+            code: 0,
             message: '测试邮件发送成功'
         });
     } catch (err) {

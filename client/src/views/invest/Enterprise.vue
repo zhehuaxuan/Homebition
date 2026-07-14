@@ -163,7 +163,7 @@ const handleSearch = async () => {
         errorMsg.value = '您输入的公司不正确，请重试~'
       }
     } else {
-      errorMsg.value = res.data.msg || '验证失败，请稍后重试'
+      errorMsg.value = res.data.message || '验证失败，请稍后重试'
     }
   } catch (err) {
     console.error('验证失败', err)
@@ -196,7 +196,7 @@ const handleConfirm = async () => {
         evaluationData.value = { totalScore: 0, summary: content }
       }
     } else {
-      ElMessage.error(res.data.msg || '评估失败，请稍后重试')
+      ElMessage.error(res.data.message || '评估失败，请稍后重试')
     }
   } catch (err) {
     console.error('评估失败', err)

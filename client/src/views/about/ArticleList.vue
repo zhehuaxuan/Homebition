@@ -58,7 +58,7 @@ async function getList() {
     loading.value = true
     const res = await axios.get('/api/article/list')
     if (res.data.code === 0) {
-      articleList.value = res.data.rows
+      articleList.value = res.data.data
     }
   } catch (err) {
     console.error('获取文章列表失败', err)
@@ -76,7 +76,7 @@ async function handleSync() {
       ElMessage.success(`同步完成：新增 ${res.data.data.synced} 篇，跳过 ${res.data.data.skipped} 篇已存在的文章`)
       getList()
     } else {
-      ElMessage.error(res.data.msg || '同步失败')
+      ElMessage.error(res.data.message || '同步失败')
     }
   } catch (err) {
     console.error('同步失败', err)

@@ -7,22 +7,34 @@
 
 ## 1. 当前现状
 
-项目当前使用 `console.log/error` 直接输出日志：
+项目后端使用 winston 日志库统一管理日志输出，配置了三个传输通道（transport）：
+
+| 传输通道 | 文件路径 | 说明 |
+|----------|----------|------|
+| Console | stdout | 开发环境控制台输出，带颜色格式化 |
+| 错误日志文件 | `server/logs/error-%DATE%.log` | 每日滚动，仅记录 `error` 及以上级别 |
+| 综合日志文件 | `server/logs/combined-%DATE%.log` | 每日滚动，记录所有级别日志 |
+
+日志保留期为 **30 天**，超过期限的日志文件自动清理。
 
 ```javascript
-console.log('✅ 服务启动成功：http://localhost:3000')
-console.error('创建接口失败:', err)
-```
-
-只有投资频道模块使用了文件日志：
-```
-server/logs/evaluate-error.log  ← JSON Lines 格式的错误日志
+// winston 配置示例
+const logger = winston.createLogger({
+  level: 'info',
+  format: winston.format.json(),
+  transports: [
+    new winston.transports.Console({ format: winston.format.colorize(...) }),
+    new winston.transports.DailyRotateFile({ filename: 'logs/error-%DATE%.log', level: 'error', maxFiles: '30d' }),
+    new winston.transports.DailyRotateFile({ filename: 'logs/combined-%DATE%.log', maxFiles: '30d' }),
+  ]
+})
 ```
 
 ## 2. 日志级别
 
 | 级别 | 方法 | 使用场景 | 颜色前缀 |
 |------|------|----------|----------|
+| DEBUG | `console.debug` | 调试信息，开发环境可用，生产环境关闭 | `[debug]` |
 | INFO | `console.log` | 启动信息、操作结果 | `✅` / `📧` |
 | WARN | `console.warn` | 非预期但可恢复的情况 | `⚠️` |
 | ERROR | `console.error` | 操作失败、异常捕获 | `❌` |
@@ -31,30 +43,30 @@ server/logs/evaluate-error.log  ← JSON Lines 格式的错误日志
 
 ### 基本格式
 ```
-[时间] [级别] [模块] 消息
+[timestamp] [level] [module] message
 ```
 
 例如：
 ```
-[2026-07-13 10:30:00] [INFO] [auth] 管理员用户已初始化: xuanzhehua
-[2026-07-13 10:30:05] [ERROR] [article] 数据库插入失败: ER_DUP_ENTRY
+[2026-07-13T10:30:00.000Z] [info] [auth] 管理员用户已初始化: xuanzhehua
+[2026-07-13T10:30:05.000Z] [error] [article] 数据库插入失败: ER_DUP_ENTRY
 ```
 
 ### 业务操作日志
 ```
-📧 [mail] 正在发送邮件到: xxx@mail.com
-📧 [mail] 邮件主题: 欢迎使用 Homebition
-📧 [mail] 邮件发送成功, messageId: xxx
+[info] [mail] 正在发送邮件到: xxx@mail.com
+[info] [mail] 邮件主题: 欢迎使用 Homebition
+[info] [mail] 邮件发送成功, messageId: xxx
 ```
 
 ### 错误日志
 ```
-❌ [模块名] 失败原因: 错误消息
+[error] [模块名] 失败原因: 错误消息
 ```
 
 错误日志应当包含足够复现上下文：
 ```javascript
-console.error('❌ [article] 获取文章详情失败:', {
+logger.error('[article] 获取文章详情失败', {
   articleId: id,
   error: err.message
 })
@@ -81,7 +93,22 @@ console.error('❌ [article] 获取文章详情失败:', {
 
 ---
 
-## 5. 文件日志（错误归档）
+## 5. 前端日志
+
+前端使用 Axios 拦截器自动记录 API 请求，输出到浏览器控制台。
+
+### Axios 拦截器格式
+```
+[API] POST /api/task/add → 200 (45ms)
+[API] GET /api/article/list → 200 (12ms) [rows=8]
+[API] POST /api/invest/evaluate → NETWORK_ERROR (timeout)
+```
+
+关键业务操作仍使用 `console.error` 记录错误（保留原有代码），与拦截器互补。
+
+---
+
+## 6. 文件日志（错误归档）
 
 当前仅 `invest.js` 实现了文件日志，其他模块的错误仅在控制台输出。
 
@@ -99,9 +126,8 @@ console.error('❌ [article] 获取文章详情失败:', {
 
 ---
 
-## 6. 禁止事项
+## 7. 禁止事项
 
 - ❌ 在生产日志中包含密码、token 等敏感信息
 - ❌ 在 `catch` 块中不输出任何信息
 - ❌ 在循环中打印大量日志（会拖慢性能）
-- ❌ 使用 `console.log` 调试后不清理

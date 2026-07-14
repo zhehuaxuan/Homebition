@@ -203,7 +203,7 @@
       <div class="feedback-section" style="margin-top:15px;">
         <div class="title">添加进展反馈</div>
         <div class="feedback-progress" style="margin-bottom:12px;">
-          <el-progress :percentage="detailData.progress" :color="customProgressColor" style="margin-bottom:8px;" />
+          <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
         </div>
         <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500"
           show-word-limit />

@@ -203,9 +203,7 @@
       <div class="feedback-section" style="margin-top:15px;">
         <div class="title">添加进展反馈</div>
         <div class="feedback-progress" style="margin-bottom:12px;">
-          <div class="title">任务进度</div>
           <el-progress :percentage="detailData.progress" :color="customProgressColor" style="margin-bottom:8px;" />
-          <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
         </div>
         <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500"
           show-word-limit />
@@ -455,11 +453,6 @@ const submitProgress = async () => {
 
 // 删除进展记录
 const handleDeleteProgress = async (progressId) => {
-  try {
-    await ElMessageBox.confirm('确定删除该进展记录？', '提示', { type: 'warning' })
-  } catch {
-    return
-  }
   await axios.delete(`/api/task/progress/delete/${progressId}`)
   ElMessage.success('删除成功')
   loadProgressList(detailData.value.id)

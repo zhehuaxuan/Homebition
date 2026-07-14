@@ -75,7 +75,7 @@
               :class="'status-' + seg.status"
               :style="weekTaskBarStyle(seg)"
               @click.stop="handleGridTaskClick(seg)">
-              <span class="bar-text">{{ seg.label }}</span>
+              <span class="bar-text">{{ seg.label }} <span style="font-size:10px;opacity:0.8;">{{ seg.status === 2 ? '100%' : (seg.progress || 0) + '%' }}</span></span>
             </div>
           </div>
         </div>
@@ -120,12 +120,20 @@
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进展记录</div>
         <div v-if="progressList.length">
-          <div v-for="(item, idx) in progressList" :key="idx" style="padding:8px 0; border-bottom:1px solid #f1f5f9;">
-            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">{{ item.create_time }}</div>
-            <div style="font-size:13px; color:#475569; line-height:1.4;">{{ item.content }}</div>
+          <div v-for="(item, idx) in progressList" :key="idx" style="display:flex; align-items:flex-start; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
+            <div style="flex:1;">
+              <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">{{ item.create_time }}</div>
+              <div style="font-size:13px; color:#475569; line-height:1.4;">{{ item.content }}</div>
+            </div>
+            <el-button type="danger" size="small" text @click="handleDeleteProgress(item.id)" style="flex-shrink:0; margin-left:8px;">✕</el-button>
           </div>
         </div>
         <div v-else style="color:#999; padding:10px 0;">暂无进展记录</div>
+      </div>
+      <div style="margin-top:15px;">
+        <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进度</div>
+        <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 50 ? '#409eff' : '#e6a23c'" style="margin-bottom:8px;" />
+        <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
       </div>
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">添加进展反馈</div>
@@ -141,7 +149,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 
 const taskList = ref([])
@@ -152,12 +160,14 @@ const detailVisible = ref(false)
 const detailData = ref(null)
 const progressList = ref([])
 const feedbackContent = ref('')
+const feedbackProgress = ref(0)
 
 function handleGridTaskClick(seg) {
   const task = taskList.value.find(t => t.id === parseInt(seg.id.split('-')[0]))
   if (!task) return
   detailData.value = { ...task }
   feedbackContent.value = ''
+  feedbackProgress.value = task.progress || 0
   loadProgressList(task.id)
   detailVisible.value = true
 }
@@ -177,9 +187,24 @@ function fmtDT(time) {
 
 async function subProgress() {
   if (!feedbackContent.value.trim()) return ElMessage.warning('请输入进展内容')
-  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value })
+  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value, progress: feedbackProgress.value })
   ElMessage.success('提交成功')
   feedbackContent.value = ''
+  // 同步列表中的进度
+  const task = taskList.value.find(t => t.id === detailData.value.id)
+  if (task) task.progress = feedbackProgress.value
+  detailData.value.progress = feedbackProgress.value
+  loadProgressList(detailData.value.id)
+}
+
+async function handleDeleteProgress(progressId) {
+  try {
+    await ElMessageBox.confirm('确定删除该进展记录？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  await axios.delete('/api/task/progress/delete/' + progressId)
+  ElMessage.success('删除成功')
   loadProgressList(detailData.value.id)
 }
 
@@ -279,6 +304,7 @@ function splitIntoSegments(task, range) {
     segs.push({
       id: `${task.id}-${idx}`,
       title: task.title,
+      progress: task.progress || 0,
       label: `【${firstTag}】【${task.importance}】【${dateFormatter(task.create_time)}-${dateFormatter(task.close_time)}】${task.title}`,
       status: task.status,
       importance: task.importance,

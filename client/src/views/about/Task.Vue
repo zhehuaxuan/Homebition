@@ -640,7 +640,15 @@ const sortStatus = (a, b) => {
   return map[a.status] - map[b.status]
 }
 const sortDate = (a, b) => new Date(a.close_time) - new Date(b.close_time)
-const sortNumber = (a, b) => a.remainDays - b.remainDays
+const sortNumber = (a, b, field) => {
+  // 支持按进度、工作量等数字字段排序
+  const getVal = (row) => {
+    if (field === 'progress') return row.progress || 0
+    if (field === 'workload') return row.workload || 0
+    return row.remainDays
+  }
+  return getVal(a) - getVal(b)
+}
 
 const customProgressColor = (percentage) => {
   if (percentage >= 100) return '#67c23a'

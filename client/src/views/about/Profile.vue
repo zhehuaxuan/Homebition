@@ -15,6 +15,7 @@
       <el-input
         v-model="profile"
         type="textarea"
+        :rows="20"
         placeholder="请输入你的个人简介"
       />
       <div style="margin-top: 12px; display: flex; gap: 10px">
@@ -28,16 +29,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 
 // 编辑状态
 const isEdit = ref(false)
 // 个人简介
 const profile = ref('')
 
-// 初始化：从本地存储读取
+// 从后端获取个人简介
+const fetchProfile = async () => {
+  try {
+    const { data } = await axios.get('/api/auth/profile')
+    if (data.code === 0) {
+      profile.value = data.data.profile || ''
+    }
+  } catch (err) {
+    console.error('获取个人简介失败', err)
+  }
+}
+
+// 初始化：从后端读取
 onMounted(() => {
-  const local = localStorage.getItem('my-profile')
-  profile.value = local || '这里是你的个人简介，点击编辑可修改~'
+  fetchProfile()
 })
 
 // 开始编辑
@@ -50,15 +63,18 @@ const cancelEdit = () => {
   isEdit.value = false
 }
 
-// 保存并同步到本地
+// 保存到后端
 const saveProfile = () => {
   if (!profile.value.trim()) {
     ElMessage.warning('简介内容不能为空')
     return
   }
-  localStorage.setItem('my-profile', profile.value)
-  isEdit.value = false
-  ElMessage.success('保存成功')
+  axios.put('/api/auth/profile', { profile: profile.value }).then(() => {
+    isEdit.value = false
+    ElMessage.success('保存成功')
+  }).catch(() => {
+    ElMessage.error('保存失败')
+  })
 }
 </script>
 

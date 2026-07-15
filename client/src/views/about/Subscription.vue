@@ -33,7 +33,11 @@
               <span>{{ formatExecTime(scope.row) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="email" label="推送邮箱" min-width="180" />
+          <el-table-column label="推送邮箱" min-width="180">
+            <template #default="scope">
+              {{ formatEmails(scope.row.email) }}
+            </template>
+          </el-table-column>
           <el-table-column label="接口名称" width="120" class-name="hide-on-mobile">
             <template #default="scope">
               <span>{{ getApiNameById(scope.row.api_id) }}</span>
@@ -50,8 +54,13 @@
               <span>{{ formatCreateTime(scope.row.create_time) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" align="center">
+          <el-table-column label="操作" width="250" align="center">
             <template #default="scope">
+              <el-button size="small" type="success"
+                @click="handleExecuteSubscription(scope.row)"
+                :loading="scope.row.executing">
+                发送
+              </el-button>
               <el-button size="small" type="primary" @click="handleEditSubscription(scope.row)">修改</el-button>
               <el-button size="small" type="danger" @click="handleDeleteSubscription(scope.row.id)">删除</el-button>
             </template>
@@ -65,13 +74,16 @@
             <div class="card-title">{{ item.name }}</div>
             <div class="card-row"><span class="card-label">类型</span>{{ item.type === 'once' ? '一次性' : '周期性' }}</div>
             <div class="card-row"><span class="card-label">执行时间</span>{{ formatExecTime(item) }}</div>
-            <div class="card-row"><span class="card-label">推送邮箱</span>{{ item.email }}</div>
+            <div class="card-row"><span class="card-label">推送邮箱</span>{{ formatEmails(item.email) }}</div>
             <div class="card-row"><span class="card-label">接口</span>{{ getApiNameById(item.api_id) }}</div>
             <div class="card-row"><span class="card-label">状态</span>
               <el-switch v-model="item.status" :active-value="1" :inactive-value="0" size="small"
                 @change="handleToggleSubscription(item)" />
             </div>
             <div class="card-actions">
+              <el-button size="small" type="success"
+                @click="handleExecuteSubscription(item)"
+                :loading="item.executing">发送</el-button>
               <el-button size="small" type="primary" @click="handleEditSubscription(item)">修改</el-button>
               <el-button size="small" type="danger" @click="handleDeleteSubscription(item.id)">删除</el-button>
             </div>
@@ -263,6 +275,13 @@
         <div class="table-container">
         <el-table :data="filteredApis" border stripe style="width: 100%">
           <el-table-column prop="name" label="接口名称" min-width="150" />
+          <el-table-column label="类型" width="100">
+            <template #default="scope">
+              <el-tag :type="scope.row.type === 'internal' ? 'success' : ''" size="small">
+                {{ scope.row.type === 'internal' ? '内部 AI' : '外部 URL' }}
+              </el-tag>
+            </template>
+          </el-table-column>
           <el-table-column prop="path" label="接口路径" min-width="300">
             <template #default="scope">
               <span class="api-path">{{ scope.row.path }}</span>
@@ -290,6 +309,12 @@
         <div class="mobile-api-cards">
           <div v-for="item in filteredApis" :key="item.id" class="mobile-card">
             <div class="card-title">{{ item.name }}</div>
+            <div class="card-row" v-if="item.type">
+              <span class="card-label">类型</span>
+              <el-tag :type="item.type === 'internal' ? 'success' : ''" size="small">
+                {{ item.type === 'internal' ? '内部 AI' : '外部 URL' }}
+              </el-tag>
+            </div>
             <div class="card-row" style="word-break:break-all;"><span class="card-label">路径</span><span class="api-path">{{ item.path }}</span></div>
             <div class="card-row" v-if="item.description"><span class="card-label">描述</span>{{ item.description }}</div>
             <div class="card-actions">
@@ -303,13 +328,38 @@
         <!-- 接口新增/编辑弹窗 -->
         <el-dialog v-model="apiDialogVisible" :title="isApiEdit ? '修改接口' : '新增接口'" width="600px">
           <el-form :model="apiForm" ref="apiFormRef" label-width="100px">
-            <el-form-item label="接口名称" prop="name" required>
-              <el-input v-model="apiForm.name" placeholder="请输入接口名称，如：获取用户信息" />
+            <el-form-item label="接口类型" prop="type" required>
+              <el-radio-group v-model="apiForm.type" @change="handleApiTypeChange">
+                <el-radio value="external">外部 URL</el-radio>
+                <el-radio value="internal">内部 AI 接口</el-radio>
+              </el-radio-group>
             </el-form-item>
-            <el-form-item label="接口路径" prop="path" required>
-              <el-input v-model="apiForm.path" placeholder="请输入接口路径，如：https://api.example.com/users" />
-              <span class="form-tip">支持 GET 请求的 HTTP/HTTPS URL</span>
-            </el-form-item>
+
+            <!-- 外部URL -->
+            <template v-if="apiForm.type === 'external'">
+              <el-form-item label="接口名称" prop="name" required>
+                <el-input v-model="apiForm.name" placeholder="请输入接口名称，如：获取用户信息" />
+              </el-form-item>
+              <el-form-item label="接口路径" prop="path" required>
+                <el-input v-model="apiForm.path" placeholder="请输入接口路径，如：https://api.example.com/users" />
+                <span class="form-tip">支持 GET 请求的 HTTP/HTTPS URL</span>
+              </el-form-item>
+            </template>
+
+            <!-- 内部AI接口 -->
+            <template v-if="apiForm.type === 'internal'">
+              <el-form-item label="接口名称" prop="name" required>
+                <el-input v-model="apiForm.name" placeholder="请输入接口名称" />
+              </el-form-item>
+              <el-form-item label="内部接口" prop="path" required>
+                <el-select v-model="apiForm.path" placeholder="请选择内部AI接口" style="width: 100%">
+                  <el-option label="AI 技术前沿早报" value="internal://ai/tech-news" />
+                  <el-option label="今日任务拆解" value="internal://ai/task-breakdown" />
+                </el-select>
+                <span class="form-tip">选择内部AI接口后，订阅执行时会自动调用大模型生成内容</span>
+              </el-form-item>
+            </template>
+
             <el-form-item label="描述" prop="description">
               <el-input v-model="apiForm.description" type="textarea" :rows="3" placeholder="请输入接口描述（可选）" />
             </el-form-item>
@@ -387,7 +437,7 @@
         </template>
 
         <el-form-item label="推送邮箱" prop="email" required>
-          <el-select v-model="subscriptionForm.email" placeholder="请选择或输入邮箱" filterable allow-create clearable
+          <el-select v-model="subscriptionForm.email" placeholder="请选择邮箱" filterable multiple clearable
             style="width: 100%">
             <el-option v-for="mail in mailList" :key="mail.id" :label="mail.address" :value="mail.address" />
           </el-select>
@@ -670,7 +720,7 @@ const subscriptionForm = reactive({
   type: 'once',
   send_time: '',
   week_days: [],
-  email: '',
+  email: [],
   template: 'welcome.ejs',
   api_id: null,
   status: 1
@@ -686,6 +736,15 @@ const filteredSubscriptions = computed(() => {
   }
   return data
 })
+
+const formatEmails = (emails) => {
+  if (!emails) return '-'
+  if (Array.isArray(emails)) return emails.join(', ')
+  try {
+    const parsed = JSON.parse(emails)
+    return Array.isArray(parsed) ? parsed.join(', ') : emails
+  } catch { return emails }
+}
 
 const formatWeekDays = (weekDays) => {
   const map = { 0: '周日', 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六' }
@@ -758,7 +817,7 @@ const handleAddSubscription = () => {
   isSubscriptionEdit.value = false
   Object.assign(subscriptionForm, {
     id: null, name: '', type: 'once', send_time: '', week_days: [],
-    email: '', template: 'welcome.ejs', api_id: null, status: 1
+    email: [], template: 'welcome.ejs', api_id: null, status: 1
   })
   subscriptionDialogVisible.value = true
 }
@@ -770,15 +829,24 @@ const handleEditSubscription = (row) => {
   subscriptionForm.type = row.type
   subscriptionForm.send_time = row.send_time
   subscriptionForm.week_days = [...(row.week_days || [])]
-  subscriptionForm.email = row.email
+  subscriptionForm.email = parseEmails(row.email)
   subscriptionForm.template = row.template || 'welcome.ejs'
   subscriptionForm.api_id = row.api_id || null
   subscriptionForm.status = row.status
   subscriptionDialogVisible.value = true
 }
 
+const parseEmails = (emails) => {
+  if (!emails) return []
+  if (Array.isArray(emails)) return emails
+  try {
+    const parsed = JSON.parse(emails)
+    return Array.isArray(parsed) ? parsed : [emails]
+  } catch { return [emails] }
+}
+
 const handleSubmitSubscription = async () => {
-  if (!subscriptionForm.name || !subscriptionForm.email) {
+  if (!subscriptionForm.name || !subscriptionForm.email || subscriptionForm.email.length === 0) {
     return ElMessage.warning('请完善必填项')
   }
   if (!subscriptionForm.template) {
@@ -802,7 +870,7 @@ const handleSubmitSubscription = async () => {
     type: subscriptionForm.type,
     send_time: subscriptionForm.send_time,
     week_days: subscriptionForm.type === 'periodic' ? subscriptionForm.week_days : [],
-    email: subscriptionForm.email,
+    email: JSON.stringify(subscriptionForm.email),
     template: subscriptionForm.template,
     api_id: subscriptionForm.api_id,
     status: subscriptionForm.status !== undefined ? subscriptionForm.status : 1
@@ -841,6 +909,23 @@ const handleDeleteSubscription = async (id) => {
     getSubscriptions()
   } catch {
     // 取消不提示
+  }
+}
+
+// 手动执行订阅任务
+const handleExecuteSubscription = async (row) => {
+  row.executing = true
+  try {
+    const { data } = await axios.post(`/api/subscription/execute/${row.id}`)
+    if (data.code === 0) {
+      ElMessage.success('发送成功')
+    } else {
+      ElMessage.error(data.message || '发送失败')
+    }
+  } catch (err) {
+    ElMessage.error(err.response?.data?.message || '发送失败')
+  } finally {
+    row.executing = false
   }
 }
 
@@ -978,6 +1063,7 @@ const apiForm = reactive({
   id: null,
   name: '',
   path: '',
+  type: 'external',
   description: ''
 })
 
@@ -1010,7 +1096,7 @@ const resetApiQuery = () => {
 
 const handleAddApi = () => {
   isApiEdit.value = false
-  Object.assign(apiForm, { id: null, name: '', path: '', description: '' })
+  Object.assign(apiForm, { id: null, name: '', path: '', type: 'external', description: '' })
   apiDialogVisible.value = true
 }
 
@@ -1019,12 +1105,20 @@ const handleEditApi = (row) => {
   apiForm.id = row.id
   apiForm.name = row.name
   apiForm.path = row.path
+  apiForm.type = row.type || 'external'
   apiForm.description = row.description || ''
   apiDialogVisible.value = true
 }
 
+const handleApiTypeChange = () => {
+  apiForm.path = ''
+}
+
 const handleSubmitApi = async () => {
-  if (!apiForm.name || !apiForm.path) {
+  if (apiForm.type === 'external' && (!apiForm.name || !apiForm.path)) {
+    return ElMessage.warning('请完善必填项')
+  }
+  if (apiForm.type === 'internal' && (!apiForm.name || !apiForm.path)) {
     return ElMessage.warning('请完善必填项')
   }
 
@@ -1033,6 +1127,7 @@ const handleSubmitApi = async () => {
       await axios.put(`/api/api/update/${apiForm.id}`, {
         name: apiForm.name,
         path: apiForm.path,
+        type: apiForm.type,
         description: apiForm.description
       })
       ElMessage.success('修改成功')
@@ -1040,6 +1135,7 @@ const handleSubmitApi = async () => {
       await axios.post('/api/api/add', {
         name: apiForm.name,
         path: apiForm.path,
+        type: apiForm.type,
         description: apiForm.description
       })
       ElMessage.success('创建成功')

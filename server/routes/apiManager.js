@@ -3,15 +3,16 @@ const router = express.Router();
 
 // 创建接口
 router.post('/api/add', async (req, res) => {
-    const { name, path, description } = req.body;
+    const { name, path, description, type } = req.body;
 
     if (!name || !path) {
         return res.status(400).json({ code: 400, message: '名称和路径不能为空' });
     }
 
     try {
-        const sql = `INSERT INTO api_manager (name, path, description, create_time) VALUES (?, ?, ?, NOW())`;
-        const [result] = await req.db.query(sql, [name, path, description || '']);
+        const apiType = type || 'external';
+        const sql = `INSERT INTO api_manager (name, path, description, type, create_time) VALUES (?, ?, ?, ?, NOW())`;
+        const [result] = await req.db.query(sql, [name, path, description || '', apiType]);
 
         res.json({ code: 0, message: '创建成功', id: result.insertId });
     } catch (err) {
@@ -34,15 +35,16 @@ router.get('/apis', async (req, res) => {
 // 更新接口
 router.put('/api/update/:id', async (req, res) => {
     const { id } = req.params;
-    const { name, path, description } = req.body;
+    const { name, path, description, type } = req.body;
 
     if (!name || !path) {
         return res.status(400).json({ code: 400, message: '名称和路径不能为空' });
     }
 
     try {
-        const sql = `UPDATE api_manager SET name=?, path=?, description=? WHERE id=?`;
-        const [result] = await req.db.query(sql, [name, path, description || '', id]);
+        const apiType = type || 'external';
+        const sql = `UPDATE api_manager SET name=?, path=?, description=?, type=? WHERE id=?`;
+        const [result] = await req.db.query(sql, [name, path, description || '', apiType, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ code: 404, message: '接口不存在' });
@@ -74,7 +76,7 @@ router.delete('/api/delete/:id', async (req, res) => {
     }
 });
 
-// 测试接口（发送 GET 请求，只支持 JSON 响应）
+// 测试接口
 router.post('/api/test/:id', async (req, res) => {
     const { id } = req.params;
 
@@ -86,6 +88,28 @@ router.post('/api/test/:id', async (req, res) => {
         }
 
         const api = rows[0];
+
+        // Handle internal AI interface type
+        if (api.type === 'internal') {
+            try {
+                const pipeline = require('../services/pipeline');
+                const result = await pipeline.executeHandler(api.path, req.db);
+                res.json({
+                    code: 0,
+                    message: '成功',
+                    data: { body: result, duration: 0 }
+                });
+            } catch (err) {
+                res.json({
+                    code: 0,
+                    message: '失败',
+                    data: { error: err.message, duration: 0 }
+                });
+            }
+            return;
+        }
+
+        // External URL: send GET request
         const targetUrl = api.path;
 
         // 发送 GET 请求测试

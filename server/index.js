@@ -88,6 +88,11 @@ if (mailConfig.enabled) {
     logger.info('[mail] 邮件服务已初始化');
 }
 
+// 8. 初始化定时调度器
+const { initScheduler } = require('./services/scheduler');
+initScheduler(pool);
+logger.info('[scheduler] 定时调度器已初始化');
+
 // 启动服务
 app.listen(3000, () => {
   logger.info('[server] 服务启动成功：http://localhost:3000');

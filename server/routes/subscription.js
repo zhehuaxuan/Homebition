@@ -44,7 +44,8 @@ router.get('/subscriptions', async (req, res) => {
         const [rows] = await req.db.query('SELECT * FROM subscription ORDER BY create_time DESC');
         const list = rows.map(item => ({
             ...item,
-            week_days: typeof item.week_days === 'string' ? JSON.parse(item.week_days || '[]') : (item.week_days || [])
+            week_days: typeof item.week_days === 'string' ? JSON.parse(item.week_days || '[]') : (item.week_days || []),
+            email: parseEmails(item.email)
         }));
         res.json({ code: 0, data: list });
     } catch (err) {
@@ -65,7 +66,8 @@ router.get('/subscription/:id', async (req, res) => {
             code: 0,
             data: {
                 ...item,
-                week_days: typeof item.week_days === 'string' ? JSON.parse(item.week_days || '[]') : (item.week_days || [])
+                week_days: typeof item.week_days === 'string' ? JSON.parse(item.week_days || '[]') : (item.week_days || []),
+                email: parseEmails(item.email)
             }
         });
     } catch (err) {
@@ -126,13 +128,34 @@ router.post('/subscription/toggle/:id', async (req, res) => {
     }
 });
 
+// 辅助函数：解析邮箱字段（兼容 JSON 数组和纯字符串）
+function parseEmails(email) {
+    if (!email) return email;
+    if (Array.isArray(email)) return email;
+    try {
+        const parsed = JSON.parse(email);
+        return Array.isArray(parsed) ? parsed : email;
+    } catch {
+        return email;
+    }
+}
+
 // 辅助函数：转换日期格式为 MySQL 格式
 function formatDateTime(time) {
     if (!time) return null;
+    // Already in MySQL datetime format
     if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(time)) {
         return time;
     }
+    // Time-only format (HH:mm:ss) for periodic tasks — return as-is
+    if (/^\d{2}:\d{2}:\d{2}$/.test(time)) {
+        return time;
+    }
     const date = new Date(time);
+    // Guard against Invalid Date (e.g. when time-only string is passed)
+    if (isNaN(date.getTime())) {
+        return time;
+    }
     const y = date.getFullYear();
     const m = (date.getMonth() + 1 + '').padStart(2, '0');
     const d = (date.getDate() + '').padStart(2, '0');
@@ -141,5 +164,30 @@ function formatDateTime(time) {
     const s = (date.getSeconds() + '').padStart(2, '0');
     return `${y}-${m}-${d} ${h}:${min}:${s}`;
 }
+
+// 手动执行订阅任务
+router.post('/subscription/execute/:id', async (req, res) => {
+    try {
+        const [rows] = await req.db.query('SELECT * FROM subscription WHERE id = ?', [req.params.id]);
+        if (rows.length === 0) {
+            return res.status(404).json({ code: 404, message: '任务不存在' });
+        }
+
+        const subscription = {
+            ...rows[0],
+            week_days: typeof rows[0].week_days === 'string'
+                ? JSON.parse(rows[0].week_days || '[]')
+                : (rows[0].week_days || [])
+        };
+
+        const { executeSubscription } = require('../services/pipeline');
+        const result = await executeSubscription(subscription, req.db);
+
+        res.json({ code: 0, message: result.message });
+    } catch (err) {
+        console.error('执行订阅任务失败:', err);
+        res.status(500).json({ code: 500, message: err.message || '执行失败' });
+    }
+});
 
 module.exports = router;

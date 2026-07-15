@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 12px 12px 0 0; }
+    .header h1 { margin: 0; font-size: 22px; }
+    .header .date { margin-top: 8px; font-size: 14px; opacity: 0.9; }
+    .content { background: white; padding: 20px; border-radius: 0 0 12px 12px; }
+    .summary { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px; padding: 12px; background: #fafafa; border-radius: 8px; }
+    .task { margin-bottom: 14px; padding: 14px; border-radius: 8px; border: 1px solid #eee; }
+    .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .task-title { font-size: 15px; font-weight: 600; color: #333; }
+    .task-priority { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
+    .task-priority.high { background: #ffe0e0; color: #d32f2f; }
+    .task-priority.medium { background: #fff3e0; color: #f57c00; }
+    .task-priority.low { background: #e8f5e9; color: #388e3c; }
+    .task-meta { font-size: 12px; color: #999; margin-bottom: 4px; }
+    .task-notes { font-size: 13px; color: #666; line-height: 1.4; }
+    .footer { text-align: center; padding: 16px; color: #999; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><%= data.subject || '今日工作安排' %></h1>
+      <div class="date"><%= data.date %></div>
+    </div>
+    <div class="content">
+      <% if (data.summary) { %>
+        <div class="summary"><%= data.summary %></div>
+      <% } %>
+      <% if (data.tasks && data.tasks.length > 0) { %>
+        <% data.tasks.forEach(function(task) { %>
+          <div class="task">
+            <div class="task-header">
+              <div class="task-title"><%= task.title %></div>
+              <span class="task-priority <%= task.priority === '高' ? 'high' : (task.priority === '中' ? 'medium' : 'low') %>"><%= task.priority %></span>
+            </div>
+            <div class="task-meta">预计耗时：<%= task.estimatedTime %></div>
+            <div class="task-notes"><%= task.notes %></div>
+          </div>
+        <% }); %>
+      <% } else { %>
+        <p style="color: #999; text-align: center;">暂无今日任务安排</p>
+      <% } %>
+    </div>
+    <div class="footer">
+      由 Homebition AI 分析 · <%= data.date %>
+    </div>
+  </div>
+</body>
+</html>

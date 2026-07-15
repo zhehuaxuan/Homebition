@@ -52,6 +52,13 @@ const initApiManagerTable = async (db) => {
             await db.execute("ALTER TABLE subscription ADD COLUMN api_id INT COMMENT '接口ID' AFTER template");
             console.log('✅ subscription 表已添加 api_id 字段');
         }
+
+        // 修改 send_time 列为 VARCHAR 以兼容一次性(datetime)和周期性(HH:mm:ss)两种格式
+        const [sendTimeCols] = await db.execute("SHOW COLUMNS FROM subscription LIKE 'send_time'");
+        if (sendTimeCols.length > 0 && sendTimeCols[0].Type.toLowerCase() === 'datetime') {
+            await db.execute("ALTER TABLE subscription MODIFY COLUMN send_time VARCHAR(50) COMMENT '发送时间: 一次性存datetime, 周期性存HH:mm:ss'");
+            console.log('✅ subscription.send_time 已改为 VARCHAR(50)');
+        }
     } catch (err) {
         console.error('❌ 初始化 api_manager 表失败:', err);
     }
@@ -128,6 +135,27 @@ router.get('/auth/profile', async (req, res) => {
             code: 500,
             message: '服务器错误'
         });
+    }
+});
+
+// 更新用户个人信息
+router.put('/auth/profile', async (req, res) => {
+    try {
+        const { profile } = req.body;
+        if (profile === undefined) {
+            return res.status(400).json({ code: 400, message: 'profile 不能为空' });
+        }
+
+        const username = req.user?.username;
+        if (!username) {
+            return res.status(401).json({ code: 401, message: '未登录' });
+        }
+
+        await req.db.execute('UPDATE `user` SET profile = ? WHERE username = ?', [profile, username]);
+        res.json({ code: 0, message: '更新成功' });
+    } catch (err) {
+        console.error('更新用户信息失败:', err);
+        res.status(500).json({ code: 500, message: '服务器错误' });
     }
 });
 

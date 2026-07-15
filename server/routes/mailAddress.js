@@ -63,7 +63,7 @@ router.delete('/mail/delete/:id', async (req, res) => {
         }
         const address = mailRows[0].address;
 
-        const [subs] = await req.db.query('SELECT COUNT(*) as count FROM subscription WHERE email = ?', [address]);
+        const [subs] = await req.db.query("SELECT COUNT(*) as count FROM subscription WHERE email = ? OR email LIKE ?", [address, `%"${address}"%`]);
         if (subs[0].count > 0) {
             return res.status(400).json({ code: 400, message: '该邮箱已被订阅任务使用，无法删除' });
         }

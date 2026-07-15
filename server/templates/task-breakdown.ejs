@@ -5,20 +5,75 @@
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 30px; text-align: center; border-radius: 12px 12px 0 0; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 12px 12px 0 0; }
     .header h1 { margin: 0; font-size: 22px; }
     .header .date { margin-top: 8px; font-size: 14px; opacity: 0.9; }
     .content { background: white; padding: 20px; border-radius: 0 0 12px 12px; }
-    .summary { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px; padding: 12px; background: #fafafa; border-radius: 8px; }
-    .task { margin-bottom: 14px; padding: 14px; border-radius: 8px; border: 1px solid #eee; }
-    .task-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-    .task-title { font-size: 15px; font-weight: 600; color: #333; }
-    .task-priority { font-size: 11px; padding: 2px 8px; border-radius: 10px; }
-    .task-priority.high { background: #ffe0e0; color: #d32f2f; }
-    .task-priority.medium { background: #fff3e0; color: #f57c00; }
-    .task-priority.low { background: #e8f5e9; color: #388e3c; }
-    .task-meta { font-size: 12px; color: #999; margin-bottom: 4px; }
-    .task-notes { font-size: 13px; color: #666; line-height: 1.4; }
+
+    .section-title { font-size: 16px; font-weight: 600; color: #333; margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #667eea; }
+    .section-title:first-of-type { margin-top: 0; }
+
+    /* Summary */
+    .summary { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 20px; padding: 12px; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea; }
+
+    /* Today Schedule */
+    .schedule { margin-bottom: 20px; }
+    .schedule-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 6px; margin-bottom: 4px; font-size: 13px; }
+    .schedule-row.work { background: #f0f4ff; border: 1px solid #dde4f0; }
+    .schedule-row.break { background: #fafafa; border: 1px solid #eee; color: #999; }
+    .schedule-row.buffer { background: #fff8e1; border: 1px solid #ffe082; color: #f57f17; }
+    .schedule-time { font-weight: 600; color: #667eea; min-width: 100px; font-size: 12px; }
+    .schedule-row.break .schedule-time { color: #999; }
+    .schedule-row.buffer .schedule-time { color: #f57f17; }
+    .schedule-task { flex: 1; }
+    .schedule-note { color: #888; font-size: 12px; margin-left: 8px; }
+
+    /* Groups */
+    .group { margin-bottom: 16px; padding: 14px; border-radius: 8px; border: 1px solid #eee; }
+    .group-header { display: flex; align-items: center; margin-bottom: 10px; }
+    .group-name { font-size: 15px; font-weight: 600; color: #333; }
+    .group-desc { font-size: 12px; color: #999; margin-left: 8px; }
+    .task-item { margin-bottom: 10px; padding: 10px; background: #fafafa; border-radius: 6px; }
+    .task-item:last-child { margin-bottom: 0; }
+    .task-row1 { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .task-title { font-size: 14px; font-weight: 600; color: #333; }
+    .task-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+    .task-badge.urgent { background: #ffebee; color: #c62828; }
+    .task-badge.high { background: #fff3e0; color: #e65100; }
+    .task-badge.medium { background: #e3f2fd; color: #1565c0; }
+    .task-badge.low { background: #e8f5e9; color: #2e7d32; }
+    .task-meta { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .task-reason { font-size: 13px; color: #555; line-height: 1.4; padding: 6px 8px; background: #fffde7; border-radius: 4px; margin-bottom: 4px; }
+    .task-suggestion { font-size: 13px; color: #555; line-height: 1.4; padding: 6px 8px; background: #f3e5f5; border-radius: 4px; }
+    .task-reason-label, .task-suggestion-label { font-weight: 600; font-size: 11px; display: block; margin-bottom: 2px; }
+    .task-reason-label { color: #f57f17; }
+    .task-suggestion-label { color: #7b1fa2; }
+    .progress-bar-bg { display: inline-block; width: 60px; height: 6px; background: #e0e0e0; border-radius: 3px; vertical-align: middle; margin-right: 4px; }
+    .progress-bar-fill { height: 100%; border-radius: 3px; }
+    .progress-bar-fill.urgent { background: #c62828; }
+    .progress-bar-fill.high { background: #e65100; }
+    .progress-bar-fill.medium { background: #1565c0; }
+    .progress-bar-fill.low { background: #2e7d32; }
+
+    /* Suspended Advice */
+    .suspended-box { margin-bottom: 16px; padding: 12px; background: #f3e5f5; border-radius: 8px; border-left: 4px solid #9c27b0; }
+    .suspended-box .label { font-size: 12px; font-weight: 600; color: #7b1fa2; display: block; margin-bottom: 4px; }
+    .suspended-box .text { font-size: 13px; color: #555; line-height: 1.5; }
+
+    /* All Tasks */
+    .all-tasks-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .all-tasks-table th { text-align: left; padding: 8px 10px; background: #f5f5f5; color: #666; font-weight: 600; font-size: 12px; border-bottom: 2px solid #e0e0e0; }
+    .all-tasks-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+    .all-tasks-table tr:hover td { background: #fafafa; }
+    .priority-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .priority-dot.urgent { background: #c62828; }
+    .priority-dot.high { background: #e65100; }
+    .priority-dot.medium { background: #1565c0; }
+    .priority-dot.low { background: #2e7d32; }
+    .remain-days { font-size: 12px; }
+    .remain-days.overdue { color: #c62828; font-weight: 600; }
+    .remain-days.normal { color: #888; }
+
     .footer { text-align: center; padding: 16px; color: #999; font-size: 12px; }
   </style>
 </head>
@@ -32,23 +87,103 @@
       <% if (data.summary) { %>
         <div class="summary"><%= data.summary %></div>
       <% } %>
-      <% if (data.tasks && data.tasks.length > 0) { %>
-        <% data.tasks.forEach(function(task) { %>
-          <div class="task">
-            <div class="task-header">
-              <div class="task-title"><%= task.title %></div>
-              <span class="task-priority <%= task.priority === '高' ? 'high' : (task.priority === '中' ? 'medium' : 'low') %>"><%= task.priority %></span>
+
+      <!-- Today Schedule -->
+      <% if (data.todaySchedule && data.todaySchedule.length > 0) { %>
+        <div class="section-title">📋 今日时间安排</div>
+        <div class="schedule">
+          <% data.todaySchedule.forEach(function(slot) { %>
+            <div class="schedule-row <%= slot.type || 'work' %>">
+              <span class="schedule-time"><%= slot.timeSlot %></span>
+              <span class="schedule-task">
+                <%= slot.title %>
+                <% if (slot.note) { %>
+                  <span class="schedule-note">— <%= slot.note %></span>
+                <% } %>
+              </span>
             </div>
-            <div class="task-meta">预计耗时：<%= task.estimatedTime %></div>
-            <div class="task-notes"><%= task.notes %></div>
+          <% }); %>
+        </div>
+      <% } %>
+
+      <!-- Priority Groups -->
+      <% if (data.groups && data.groups.length > 0) { %>
+        <div class="section-title">🎯 今日工作安排建议</div>
+        <% data.groups.forEach(function(group) { %>
+          <div class="group">
+            <div class="group-header">
+              <span class="group-name"><%= group.name %></span>
+              <% if (group.description) { %>
+                <span class="group-desc"><%= group.description %></span>
+              <% } %>
+            </div>
+            <% group.tasks.forEach(function(task) { %>
+              <div class="task-item">
+                <div class="task-row1">
+                  <span class="task-title"><%= task.title %></span>
+                  <span class="task-badge <%= task.priority %>"><%= task.priority === 'urgent' ? '紧急' : (task.priority === 'high' ? '高' : (task.priority === 'medium' ? '中' : '低')) %></span>
+                </div>
+                <div class="task-meta">
+                  <% if (task.currentStatus) { %><%= task.currentStatus %> · <% } %>
+                  <% if (task.progress !== undefined && task.progress !== null) { %>
+                    <span class="progress-bar-bg"><span class="progress-bar-fill <%= task.priority %>" style="width:<%= task.progress %>%"></span></span><%= task.progress %>%
+                  <% } %>
+                  <% if (task.estimatedMinutes) { %> · 预计 <%= task.estimatedMinutes %> 分钟<% } %>
+                  <% if (task.remainDays !== undefined && task.remainDays !== null) { %>
+                    · <span class="remain-days <%= task.remainDays < 0 ? 'overdue' : 'normal' %>"><%= task.remainDays < 0 ? '已超期' + Math.abs(task.remainDays) + '天' : '剩余' + task.remainDays + '天' %></span>
+                  <% } else { %>
+                    · <span class="remain-days normal">未设置截止日</span>
+                  <% } %>
+                </div>
+                <% if (task.reason) { %>
+                  <div class="task-reason"><span class="task-reason-label">💡 原因</span><%= task.reason %></div>
+                <% } %>
+                <% if (task.suggestion) { %>
+                  <div class="task-suggestion"><span class="task-suggestion-label">✏️ 建议</span><%= task.suggestion %></div>
+                <% } %>
+              </div>
+            <% }); %>
           </div>
         <% }); %>
-      <% } else { %>
-        <p style="color: #999; text-align: center;">暂无今日任务安排</p>
+      <% } %>
+
+      <!-- Suspended Advice -->
+      <% if (data.suspendedAdvice) { %>
+        <div class="suspended-box">
+          <span class="label">⏸️ 挂起任务建议</span>
+          <span class="text"><%= data.suspendedAdvice %></span>
+        </div>
+      <% } %>
+
+      <!-- All Tasks -->
+      <% if (data.allTasks && data.allTasks.length > 0) { %>
+        <div class="section-title">📝 未完成任务清单</div>
+        <table class="all-tasks-table">
+          <thead>
+            <tr>
+              <th>优先级</th>
+              <th>任务</th>
+              <th>状态</th>
+              <th>进度</th>
+              <th>剩余</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% data.allTasks.forEach(function(t) { %>
+              <tr>
+                <td><span class="priority-dot <%= t.priority %>"></span><%= t.priority === 'urgent' ? '紧急' : (t.priority === 'high' ? '高' : (t.priority === 'medium' ? '中' : '低')) %></td>
+                <td><%= t.title %></td>
+                <td><%= t.status %></td>
+                <td><%= t.progress %>%</td>
+                <td class="remain-days <%= t.remainDays < 0 ? 'overdue' : 'normal' %>"><%= t.remainDays < 0 ? '超期' + Math.abs(t.remainDays) + '天' : (t.remainDays !== null ? t.remainDays + '天' : '未设置') %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
       <% } %>
     </div>
     <div class="footer">
-      由 Homebition AI 分析 · <%= data.date %>
+      由 Homebition 系统结合AI进行综合分析 · <%= data.date %>
     </div>
   </div>
 </body>

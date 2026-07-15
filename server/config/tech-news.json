@@ -1,0 +1,28 @@
+{
+  "sources": [
+    { "name": "InfoQ", "domain": "infoq.cn" },
+    { "name": "极客公园", "domain": "geekpark.net" },
+    { "name": "奇客资讯", "domain": "solidot.org" },
+    { "name": "arXiv", "domain": "arxiv.org" },
+    { "name": "GitHub", "domain": "github.com" },
+    { "name": "PapersWithCode", "domain": "paperswithcode.com" },
+    { "name": "华尔街见闻", "domain": "wallstreetcn.com" },
+    { "name": "东方财富", "domain": "eastmoney.com" },
+    { "name": "网易科技", "domain": "tech.163.com" },
+    { "name": "机器之心", "domain": "jiqizhixin.com" },
+    { "name": "今日头条", "domain": "toutiao.com" },
+    { "name": "雪球", "domain": "xueqiu.com" }
+  ],
+  "stocks": {
+    "markets": [
+      { "name": "上证指数", "code": "sh000001" },
+      { "name": "深证成指", "code": "sz399001" },
+      { "name": "创业板指", "code": "sz399006" }
+    ],
+    "industries": ["半导体", "创新药", "AI算力"],
+    "tickers": [
+      { "name": "盐津铺子", "code": "sz002847" },
+      { "name": "五洲新春", "code": "sh603667" }
+    ]
+  }
+}

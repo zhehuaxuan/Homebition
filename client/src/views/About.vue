@@ -52,6 +52,12 @@
             <span class="text">订阅管理</span>
           </router-link>
         </li>
+        <li>
+          <router-link to="/about/daily-summary" class="menu-item">
+            <span class="icon">📋</span>
+            <span class="text">每日总结</span>
+          </router-link>
+        </li>
       </ul>
     </div>
 
@@ -72,6 +78,7 @@ const tabs = [
   { to: '/about/article-list', label: '文章', icon: '📄' },
   { to: '/about/tag-list', label: '标签', icon: '📄' },
   { to: '/about/subscription-list', label: '订阅', icon: '📧' },
+  { to: '/about/daily-summary', label: '日报', icon: '📋' },
 ]
 </script>
 

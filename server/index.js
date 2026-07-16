@@ -66,6 +66,8 @@ app.use('/api', mailAddressRouter);
 app.use('/api', templateRouter);
 app.use('/api', apiManagerRouter);
 app.use('/api', investRouter);
+const dailySummaryRouter = require('./routes/dailySummary');
+app.use('/api', dailySummaryRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {
@@ -80,6 +82,9 @@ authRouter.initAdmin(pool);
 authRouter.initApiManagerTable(pool);
 articleRouter.initArticleTable(pool);
 
+// 8.5 初始化每日总结表
+dailySummaryRouter.initDailySummaryTable(pool);
+
 // 7. 初始化邮件服务
 const mailConfig = require('./config/mail');
 const { initTransporter } = require('./services/mail');
@@ -92,6 +97,16 @@ if (mailConfig.enabled) {
 const { initScheduler } = require('./services/scheduler');
 initScheduler(pool);
 logger.info('[scheduler] 定时调度器已初始化');
+
+// 9. 初始化每日总结订阅（复用订阅系统）
+const { initDailySummarySubscription } = require('./routes/dailySummary');
+initDailySummarySubscription(pool);
+
+// 10. 初始化 IMAP 日报邮件轮询
+const { initPoller } = require('./services/imapPoller');
+if (mailConfig.enabled) {
+    initPoller(pool);
+}
 
 // 启动服务
 app.listen(3000, () => {

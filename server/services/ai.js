@@ -175,6 +175,7 @@ ${sourceListStr}
 }`;
 
     try {
+        logger.info(`[ai] 正在调用 DeepSeek API (${deepseekModel})...`);
         const response = await axios.post(`${deepseekBaseUrl}/chat/completions`, {
             model: deepseekModel,
             messages: [{ role: 'user', content: prompt }],
@@ -187,6 +188,7 @@ ${sourceListStr}
             },
             timeout: 60000
         });
+        logger.info(`[ai] DeepSeek API 调用成功, HTTP ${response.status}`);
 
         const content = response.data.choices[0].message.content.trim();
         const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -246,6 +248,7 @@ function buildAllTasks(tasks) {
         return {
             taskId: t.id,
             title: t.title,
+            target: t.target || '',
             status: statusMap[t.status] || '未知',
             priority: p,
             progress: t.progress || 0,
@@ -400,6 +403,7 @@ ${formattedTasks}
 - 充分参考任务的当前进度、剩余天数和重要性`;
 
     try {
+        logger.info(`[ai] 正在调用 DeepSeek API (${deepseekModel})...`);
         const response = await axios.post(`${deepseekBaseUrl}/chat/completions`, {
             model: deepseekModel,
             messages: [{ role: 'user', content: prompt }],
@@ -412,6 +416,7 @@ ${formattedTasks}
             },
             timeout: 60000
         });
+        logger.info(`[ai] DeepSeek API 调用成功, HTTP ${response.status}`);
 
         const content = response.data.choices[0].message.content.trim();
         const jsonMatch = content.match(/\{[\s\S]*\}/);

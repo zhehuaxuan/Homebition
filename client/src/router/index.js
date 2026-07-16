@@ -59,6 +59,10 @@ const routes = [
         name: 'SubscriptionList',
         component: () => import('../views/about/Subscription.vue')
       },{
+        path: 'daily-summary',
+        name: 'DailySummary',
+        component: () => import('../views/about/DailySummary.vue')
+      },{
         path: '/article/add',
         name: 'ArticleAdd',
         component: () => import('../views/article/ArticleEdit.vue')

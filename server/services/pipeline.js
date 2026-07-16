@@ -15,7 +15,12 @@ async function executeHandler(apiPath, db) {
 
     const handlers = {
         'ai/tech-news': generateTechNews,
-        'ai/task-breakdown': generateTaskBreakdown
+        'ai/task-breakdown': generateTaskBreakdown,
+        'ai/daily-summary': async (db) => {
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10);
+            return { date: dateStr };
+        }
     };
 
     const handler = handlers[handlerName];

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const cheerio = require('cheerio');
+const axios = require('axios');
 
 // 初始化 article 表
 const initArticleTable = async (db) => {
@@ -96,54 +97,113 @@ router.get('/article/list', async (req, res) => {
   }
 });
 
-// 从 GitHub 同步文章到数据库
+// 从多个源同步文章到数据库（博客 + Wiki 等）
 router.post('/article/sync', async (req, res) => {
   try {
-    let html = '';
-    const maxRetries = 3;
-    for (let i = 0; i < maxRetries; i++) {
+    // 代理配置
+    const proxyUrl = process.env.PROXY_URL;
+    let axiosConfig = { timeout: 30000 };
+    if (proxyUrl) {
+      const u = new URL(proxyUrl);
+      axiosConfig.proxy = {
+        protocol: u.protocol.replace(':', ''),
+        host: u.hostname,
+        port: parseInt(u.port, 10)
+      };
+    }
+
+    const fetchWithRetry = async (url) => {
+      const maxRetries = 3;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const response = await axios.get(url, axiosConfig);
+          return response.data;
+        } catch (err) {
+          if (i === maxRetries - 1) throw err;
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+    };
+
+    const sources = [
+      {
+        name: '博客',
+        url: 'https://zhehuaxuan.github.io/archives/',
+        parse: ($) => {
+          const skipTexts = ['GitHub', 'E-Mail', 'RSS', '标签', '分类', '日志', '文章', '首页', '订阅', '关于'];
+          const links = [];
+          $('a[href]').each((_, link) => {
+            const href = $(link).attr('href');
+            const text = $(link).text().trim();
+            if (!href || !text || text.length < 3) return;
+            if (skipTexts.some(t => text.includes(t))) return;
+            if (href.startsWith('#') || href.startsWith('mailto:')) return;
+            if (href.startsWith('http') && !href.includes('zhehuaxuan.github.io')) return;
+            let fullUrl = href.startsWith('http') ? href : 'https://zhehuaxuan.github.io' + (href.startsWith('/') ? href : '/' + href);
+            if (href === '/' || href === '' || href === '#') return;
+            let date = '';
+            const dateMatch = href.match(/\/(\d{4})\/(\d{2})\/(\d{2})\//);
+            if (dateMatch) date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+            links.push({ title: decodeURIComponent(text), url: fullUrl, date: date || null });
+          });
+          return links;
+        }
+      },
+      {
+        name: 'Wiki',
+        url: 'https://github.com/zhehuaxuan/Mnemosyne/wiki',
+        parse: ($) => {
+          const links = [];
+          $('a[href*="/wiki/"]').each((_, link) => {
+            const href = $(link).attr('href');
+            const text = $(link).text().trim();
+            if (!href || !text || text.length < 2) return;
+            if (href.includes('/_new') || href.includes('/_edit') || href.includes('/_history')) return;
+            if (href.endsWith('/wiki') || href.endsWith('/wiki/')) return;
+            const fullUrl = href.startsWith('http') ? href : 'https://github.com' + href;
+            links.push({ title: text, url: fullUrl, date: null });
+          });
+          return links;
+        }
+      }
+    ];
+
+    const allLinks = [];
+    const sourceResults = [];
+
+    for (const source of sources) {
       try {
-        const response = await fetch('https://zhehuaxuan.github.io/archives/', {
-          signal: AbortSignal.timeout(30000)
-        });
-        html = await response.text();
-        break;
+        const html = await fetchWithRetry(source.url);
+        const $ = cheerio.load(html);
+        let links = source.parse($);
+
+        // Wiki 源需要抓取每篇文章提取 frontmatter 中的日期
+        if (source.name === 'Wiki' && links.length > 0) {
+          for (const link of links) {
+            try {
+              const pageHtml = await fetchWithRetry(link.url);
+              const page$ = cheerio.load(pageHtml);
+              const contentText = page$('#wiki-content').text();
+              const dateMatch = contentText.match(/日期:\s*(\d{4}-\d{2}-\d{2})/);
+              if (dateMatch) {
+                link.date = dateMatch[1];
+              }
+            } catch (err) {
+              console.error(`[Wiki] 抓取页面内容失败: ${link.url}`, err.message);
+            }
+          }
+        }
+
+        allLinks.push(...links);
+        sourceResults.push({ source: source.name, found: links.length });
       } catch (err) {
-        if (i === maxRetries - 1) throw err;
-        await new Promise(r => setTimeout(r, 1000));
+        console.error(`[${source.name}] 抓取失败:`, err.message);
+        sourceResults.push({ source: source.name, found: 0, error: err.message });
       }
     }
 
-    const $ = cheerio.load(html);
-    const skipTexts = ['GitHub', 'E-Mail', 'RSS', '标签', '分类', '日志', '文章', '首页', '订阅', '关于'];
-
-    const articleLinks = [];
-    $('a[href]').each((_, link) => {
-      const href = $(link).attr('href');
-      const text = $(link).text().trim();
-
-      if (!href || !text || text.length < 3) return;
-      if (skipTexts.some(t => text.includes(t))) return;
-      if (href.startsWith('#') || href.startsWith('mailto:')) return;
-      if (href.startsWith('http') && !href.includes('zhehuaxuan.github.io')) return;
-
-      let fullUrl = href.startsWith('http') ? href : 'https://zhehuaxuan.github.io' + (href.startsWith('/') ? href : '/' + href);
-      if (href === '/' || href === '' || href === '#') return;
-
-      let date = '';
-      const dateMatch = href.match(/\/(\d{4})\/(\d{2})\/(\d{2})\//);
-      if (dateMatch) {
-        date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
-      }
-
-      articleLinks.push({
-        title: decodeURIComponent(text),
-        url: fullUrl,
-        date: date || null
-      });
-    });
-
-    const uniqueLinks = articleLinks.filter((item, index, self) =>
+    // 全局去重
+    const uniqueLinks = allLinks.filter((item, index, self) =>
       index === self.findIndex(t => t.url === item.url)
     );
 
@@ -168,7 +228,8 @@ router.post('/article/sync', async (req, res) => {
       message: '同步成功',
       data: {
         synced: syncCount,
-        skipped: skipCount
+        skipped: skipCount,
+        sources: sourceResults
       }
     });
   } catch (error) {

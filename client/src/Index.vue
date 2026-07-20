@@ -33,7 +33,7 @@ const mobileLinks = computed(() => {
     ]
     if (authStore.isLoggedIn()) {
         links.push({ path: '/tasks', label: '我的任务', icon: '✅' })
-        links.push({ path: '/about', label: '关于我', icon: '👤' })
+        links.push({ path: '/about', label: '关于我', icon: '⚙️' })
     }
     if (!authStore.isLoggedIn()) {
         links.push({ path: '/login', label: '登录', icon: '🔑' })
@@ -60,7 +60,7 @@ onUnmounted(() => {
             <li><router-link to="/articles" @click="closeMenu">我的文章</router-link></li>
             <li><router-link to="/invest" @click="closeMenu">投资频道</router-link></li>
             <li v-if="authStore.isLoggedIn()"><router-link to="/tasks" @click="closeMenu">我的任务</router-link></li>
-            <li v-if="authStore.isLoggedIn()"><router-link to="/about" @click="closeMenu">关于我</router-link></li>
+            <li v-if="authStore.isLoggedIn()"><router-link to="/about" @click="closeMenu">后台管理</router-link></li>
         </ul>
         <div class="nav-actions">
             <router-link v-if="!authStore.isLoggedIn()" to="/login" class="nav-login-btn" @click="closeMenu">登录</router-link>

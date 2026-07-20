@@ -68,6 +68,8 @@ app.use('/api', apiManagerRouter);
 app.use('/api', investRouter);
 const dailySummaryRouter = require('./routes/dailySummary');
 app.use('/api', dailySummaryRouter);
+const investmentReviewRouter = require('./routes/investmentReview');
+app.use('/api', investmentReviewRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {
@@ -84,6 +86,12 @@ articleRouter.initArticleTable(pool);
 
 // 8.5 初始化每日总结表
 dailySummaryRouter.initDailySummaryTable(pool);
+
+// 8.6 初始化投资复盘表 + 默认配置
+(async () => {
+    await investmentReviewRouter.initTables(pool);
+    await investmentReviewRouter.seedDefaultConfig(pool);
+})();
 
 // 7. 初始化邮件服务
 const mailConfig = require('./config/mail');

@@ -70,11 +70,13 @@ const verifyCompany = async (query) => {
     }
 };
 
-// 企业评估（使用 MiniMax）
+// 企业评估（使用 DeepSeek）
 const evaluateCompany = async (companyName, companyCode) => {
     const cfg = await loadConfig();
 
-    const prompt = `【AI提示词】如何评估一个公司的基本面：
+    const prompt = `当前日期：${new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })}
+
+【AI提示词】如何评估一个公司的基本面：
 我是一个股票交易员，请你对【${companyName}】【${companyCode}】按照如下任务进行评估：
 ## 任务说明
 请严格按照以下既定评估体系，对指定行业及个股进行量化打分评估，所有评分统一采用0-10分打分制：0分=完全不符合，10分=完全符合，部分符合场景结合实际情况、逻辑匹配度给到0-10分区间对应分数，打分需客观、贴合实际、有理有据。
@@ -129,71 +131,31 @@ const evaluateCompany = async (companyName, companyCode) => {
   "strategy": "交易策略建议"
 }`;
 
-    return new Promise((resolve, reject) => {
-        const chunks = [];
-        const url = `${cfg.minimax.baseUrl}/messages`;
-
-        const requestBody = {
-            model: cfg.minimax.model,
-            messages: [
-                { role: 'user', content: prompt }
-            ],
+    try {
+        const response = await axios.post(`${cfg.deepseek.baseUrl}/chat/completions`, {
+            model: cfg.deepseek.model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.3,
             max_tokens: 8000,
-            stream: true
-        };
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${cfg.minimax.apiKey}`,
-            'anthropic-version': '2023-06-01'
-        };
-
-        axios.post(url, requestBody, {
-            headers: headers,
-            timeout: 300000, // 5分钟超时
-            responseType: 'stream'
-        }).then(response => {
-
-            response.data.on('data', (chunk) => {
-                chunks.push(chunk);
-            });
-
-            response.data.on('end', () => {
-                const fullData = chunks.join('');
-
-                // 解析 SSE 数据
-                let resultContent = '';
-                const lines = fullData.split('\n');
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const dataStr = line.slice(6).trim();
-                        if (dataStr === '[DONE]' || dataStr === '') continue;
-
-                        try {
-                            const data = JSON.parse(dataStr);
-                            // 从 content_block_delta 中提取文本
-                            if (data.type === 'content_block_delta' && data.delta && data.delta.text) {
-                                resultContent += data.delta.text;
-                            }
-                        } catch (e) {
-                            // 忽略解析错误
-                        }
-                    }
-                }
-
-                resolve(resultContent);
-            });
-
-            response.data.on('error', (err) => {
-                logger.error('[ai] SSE 流错误', { error: err.message });
-                reject(err);
-            });
-        }).catch(err => {
-            console.error('MiniMax API 调用失败:', err.message);
-            reject(err);
+            stream: false
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${cfg.deepseek.apiKey}`
+            },
+            timeout: 120000
         });
-    });
+
+        const content = response.data.choices[0].message.content.trim();
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return jsonMatch[0];
+        }
+        throw new Error('无法从返回中提取JSON');
+    } catch (error) {
+        logger.error('[ai] 企业评估失败', { error: error.message, companyName, companyCode });
+        throw error;
+    }
 };
 
 module.exports = { verifyCompany, evaluateCompany };

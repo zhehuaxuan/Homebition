@@ -63,6 +63,18 @@ const routes = [
         name: 'DailySummary',
         component: () => import('../views/about/DailySummary.vue')
       },{
+        path: 'daily-review',
+        name: 'DailyReview',
+        component: () => import('../views/about/DailyReview.vue')
+      },{
+        path: 'dashboard',
+        name: 'Dashboard',
+        component: () => import('../views/about/Dashboard.vue')
+      },{
+        path: 'review-config',
+        name: 'ReviewConfig',
+        component: () => import('../views/about/ReviewConfig.vue')
+      },{
         path: '/article/add',
         name: 'ArticleAdd',
         component: () => import('../views/article/ArticleEdit.vue')
@@ -74,7 +86,7 @@ const routes = [
       },
       {
         path: '',
-        redirect: '/about/profile'
+        redirect: '/about/task-list'
       }
     ]
   },

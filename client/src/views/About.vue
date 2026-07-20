@@ -26,7 +26,7 @@
     </div>
     <!-- 左侧导航栏 -->
     <div class="sidebar">
-      <div class="sidebar-header">关于我</div>
+      <div class="sidebar-header">后台管理</div>
       <div v-for="group in menuGroups" :key="group.key" class="sidebar-group">
         <div class="group-title">{{ group.label }}</div>
         <ul class="sidebar-menu">
@@ -54,27 +54,20 @@ import { ref, computed } from 'vue'
 
 // 分组定义
 const groups = [
-  { key: 'personal', label: '个人' },
-  { key: 'content', label: '内容管理' },
+  { key: 'dashboard', label: '仪表盘' },
   { key: 'tasks', label: '任务与订阅' },
+  { key: 'invest', label: '投资管理' },
+  { key: 'content', label: '内容管理' },
+  { key: 'personal', label: '设置' },
 ]
 
 // 分组标题 + 菜单项定义
 const menuGroups = [
   {
-    key: 'personal',
-    label: '个人',
+    key: 'dashboard',
+    label: '仪表盘',
     children: [
-      { to: '/about/profile', label: '关于我', icon: '👤' },
-      { to: '/about/devices', label: '我的设备', icon: '💻' },
-    ],
-  },
-  {
-    key: 'content',
-    label: '内容管理',
-    children: [
-      { to: '/about/article-list', label: '文章清单', icon: '📄' },
-      { to: '/about/tag-list', label: '标签管理', icon: '🏷' },
+      { to: '/about/dashboard', label: '我的看板', icon: '📊' },
     ],
   },
   {
@@ -86,10 +79,34 @@ const menuGroups = [
       { to: '/about/daily-summary', label: '每日总结', icon: '📋' },
     ],
   },
+  {
+    key: 'invest',
+    label: '投资管理',
+    children: [
+      { to: '/about/daily-review', label: '每日复盘', icon: '📈' },
+      { to: '/about/review-config', label: '复盘配置', icon: '⚙️' },
+    ],
+  },
+  {
+    key: 'content',
+    label: '内容管理',
+    children: [
+      { to: '/about/article-list', label: '文章清单', icon: '📄' },
+      { to: '/about/tag-list', label: '标签管理', icon: '🏷' },
+    ],
+  },
+  {
+    key: 'personal',
+    label: '设置',
+    children: [
+      { to: '/about/profile', label: '关于我', icon: '⚙️' },
+      { to: '/about/devices', label: '我的设备', icon: '💻' },
+    ],
+  },
 ]
 
 // 移动端：当前选中的分组
-const activeGroup = ref('personal')
+const activeGroup = ref('dashboard')
 
 // 移动端：当前分组下的标签栏数据
 const filteredTabs = computed(() => {
@@ -99,6 +116,7 @@ const filteredTabs = computed(() => {
 
 // 移动端标签（短标签用于移动端显示）
 const tabLabels = {
+  '/about/dashboard': '看板',
   '/about/profile': '关于我',
   '/about/devices': '设备',
   '/about/article-list': '文章',
@@ -106,6 +124,8 @@ const tabLabels = {
   '/about/task-list': '任务',
   '/about/subscription-list': '订阅',
   '/about/daily-summary': '日报',
+  '/about/daily-review': '复盘',
+  '/about/review-config': '配置',
 }
 </script>
 

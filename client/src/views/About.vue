@@ -141,7 +141,7 @@ const tabLabels = {
   font-weight: 600;
   color: #e2e8f0; /* 浅灰色字体，不刺眼 */
   padding: 0 20px 16px;
-  border-bottom: 1px solid #334155;
+  border-bottom: 1px solid #334155; /* 淡色分隔线，柔和不突兀 */
   margin-bottom: 12px;
 }
 
@@ -167,6 +167,7 @@ const tabLabels = {
   color: #a5b4fc; /* 浅蓝紫色，呼应主色，不突兀 */
 }
 
+/* 选中高亮：保留原要求的浅蓝背景+左边框，适配深色 */
 :deep(.router-link-active) {
   background-color: rgba(64, 158, 255, 0.15); /* 主色#409eff 透明背景，清新不厚重 */
   color: #409eff; /* 主色字体，突出选中 */
@@ -180,6 +181,7 @@ const tabLabels = {
   color: #94a3b8; /* 图标淡灰色，贴合整体柔和感 */
 }
 
+/* 右侧内容面板：深色卡片，与导航呼应，保证内容清晰 */
 .content-panel {
   flex: 1;
   min-height: calc(100vh - 92px);
@@ -191,6 +193,7 @@ const tabLabels = {
   box-sizing: border-box;
 }
 
+/* 适配二级内容页面的基础样式，确保文字不刺眼 */
 :deep(.content-page) {
   line-height: 1.6;
   font-size: 14px;

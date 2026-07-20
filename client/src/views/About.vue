@@ -139,7 +139,7 @@ const tabLabels = {
 .sidebar-header {
   font-size: 18px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: #e2e8f0; /* 浅灰色字体，不刺眼 */
   padding: 0 20px 16px;
   border-bottom: 1px solid #334155;
   margin-bottom: 12px;
@@ -155,38 +155,39 @@ const tabLabels = {
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  color: #cbd5e1;
+  color: #cbd5e1; /* 灰色系字体，贴合原要求 */
   text-decoration: none;
   font-size: 15px;
-  transition: all 0.2s ease;
+  transition: all 0.2s ease; /* 柔和过渡，提升体验 */
 }
 
+/* 鼠标悬浮效果：柔和变亮，不刺眼 */
 .menu-item:hover {
   background-color: #2d3a52;
-  color: #a5b4fc;
+  color: #a5b4fc; /* 浅蓝紫色，呼应主色，不突兀 */
 }
 
 :deep(.router-link-active) {
-  background-color: rgba(64, 158, 255, 0.15);
-  color: #409eff;
+  background-color: rgba(64, 158, 255, 0.15); /* 主色#409eff 透明背景，清新不厚重 */
+  color: #409eff; /* 主色字体，突出选中 */
   font-weight: 500;
-  border-left: 4px solid #409eff;
+  border-left: 4px solid #409eff; /* 原要求浅蓝左边框 */
 }
 
 .icon {
   margin-right: 10px;
   font-size: 16px;
-  color: #94a3b8;
+  color: #94a3b8; /* 图标淡灰色，贴合整体柔和感 */
 }
 
 .content-panel {
   flex: 1;
   min-height: calc(100vh - 92px);
-  background: #1e293b;
+  background: #1e293b; /* 与导航卡片一致，统一协调 */
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
-  color: #e2e8f0;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15); /* 极淡阴影，贴合原要求 */
+  color: #e2e8f0; /* 浅灰色字体，不刺眼、干净 */
   box-sizing: border-box;
 }
 
@@ -205,6 +206,10 @@ const tabLabels = {
 /* 分组标题 */
 .sidebar-group {
   padding: 0;
+}
+
+.sidebar-group + .sidebar-group {
+  border-top: 1px solid #334155;
 }
 
 .group-title {

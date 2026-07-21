@@ -25,7 +25,8 @@
       <!-- 表格 -->
       <div v-if="historyLoading" class="loading-text">加载中...</div>
       <div v-else-if="historyList.length === 0" class="empty-text">暂无复盘记录</div>
-      <el-table v-else :data="filteredList" stripe class="review-table">
+      <div class="desktop-table" v-else>
+        <el-table :data="filteredList" stripe class="review-table">
         <el-table-column label="日期" width="120">
           <template #default="{ row }">
             {{ formatDateStr(row.review_date) }}
@@ -82,6 +83,55 @@
           </template>
         </el-table-column>
       </el-table>
+    </div>
+
+    <!-- 移动端卡片列表 -->
+    <div v-if="filteredList.length" class="mobile-card-list">
+      <div v-for="item in filteredList" :key="item.id || item.review_date" class="mobile-card">
+        <div class="card-header">
+          <span class="card-date">{{ formatDateStr(item.review_date) }}</span>
+          <el-button text size="small" @click="openReview(item.review_date)">查看</el-button>
+        </div>
+        <div class="card-body">
+          <div v-if="item.market_sentiment" class="card-field">
+            <span class="card-label">大盘感受</span>
+            <el-tag size="small" effect="plain">{{ item.market_sentiment }}</el-tag>
+          </div>
+          <div v-if="item.current_main_line" class="card-field">
+            <span class="card-label">当前主线</span>
+            <span class="plan-tag">{{ item.current_main_line }}</span>
+          </div>
+          <div v-if="item.confidence_score" class="card-field">
+            <span class="card-label">信心指数</span>
+            <span class="score-stars">{{ '★'.repeat(item.confidence_score) }}</span>
+          </div>
+          <div v-if="item.action_plan" class="card-field">
+            <span class="card-label">操作计划</span>
+            <span class="plan-tag">{{ item.action_plan }}</span>
+          </div>
+          <div v-if="item.risk_warnings && safeArray(item.risk_warnings).length" class="card-field">
+            <span class="card-label">风险预警</span>
+            <div class="card-tags">
+              <el-tag v-for="w in safeArray(item.risk_warnings)" :key="w" size="small" type="danger" effect="plain" class="inline-tag">
+                {{ w }}
+              </el-tag>
+            </div>
+          </div>
+          <div v-if="item.opportunity_sectors && safeArray(item.opportunity_sectors).length" class="card-field">
+            <span class="card-label">机会板块</span>
+            <div class="card-tags">
+              <el-tag v-for="s in safeArray(item.opportunity_sectors)" :key="s" size="small" type="success" effect="plain" class="inline-tag">
+                {{ s }}
+              </el-tag>
+            </div>
+          </div>
+          <div v-if="item.position_feeling" class="card-field">
+            <span class="card-label">仓位</span>
+            <span class="plan-tag">{{ item.position_feeling }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
     </template>
 
     <!-- ============== 复盘模式 ============== -->
@@ -610,4 +660,70 @@ onMounted(async () => {
 :deep(.el-checkbox__label) { font-size: 13px; }
 .field-textarea { width: 100%; }
 .form-actions { display: flex; justify-content: flex-end; padding-top: 8px; }
+
+/* 移动端卡片布局 */
+.mobile-card-list { display: none; }
+
+.mobile-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border-bottom: 1px solid #334155;
+}
+
+.card-date {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.card-body {
+  padding: 8px 12px 12px;
+}
+
+.card-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.card-label {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 12px;
+  min-width: 56px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 8px;
+  }
+
+  .desktop-table {
+    display: none !important;
+  }
+
+  .mobile-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+}
 </style>

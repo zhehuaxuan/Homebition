@@ -8,7 +8,7 @@
 
 ## 1. 表结构总览
 
-当前数据库包含 **10 张表**：
+当前数据库包含 **11 张表**：
 
 | # | 表名 | 用途 | 行数规模 |
 |---|------|------|----------|
@@ -21,7 +21,8 @@
 | 7 | `mail_address` | 联系人邮箱 | 低 |
 | 8 | `mail_template` | 邮件模板（数据库版） | 低 |
 | 9 | `api_manager` | 外部接口注册 | 低 |
-| 10 | EJS 模板文件 | 文件系统 `server/templates/` | — |
+| 10 | `flash_ideas` | 闪念记录 | 低 |
+| 11 | EJS 模板文件 | 文件系统 `server/templates/` | — |
 
 ---
 
@@ -154,6 +155,23 @@ CREATE TABLE api_manager (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+### 2.10 flash_ideas — 闪念记录
+
+```sql
+CREATE TABLE flash_ideas (
+    id          INT             AUTO_INCREMENT PRIMARY KEY,
+    content     TEXT            NOT NULL COMMENT '闪念内容',
+    status      ENUM('sapling','tree','forest') NOT NULL DEFAULT 'sapling' COMMENT '状态：小树苗/大树/森林',
+    task_id     INT             DEFAULT NULL COMMENT '关联任务 ID',
+    created_at  DATETIME        DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    updated_at  DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后修改时间',
+    INDEX idx_status (status),
+    INDEX idx_task (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+**说明**: 状态流转 — sapling（默认新建）→ tree（关联任务）→ forest（关联任务已完成，查询时自动检测）。
+
 ---
 
 ## 3. ER 关系
@@ -166,6 +184,9 @@ task ────< taskdetail
 
 task.tags (JSON) ──── tag.id
          (应用层解析，非外键)
+
+flash_ideas.task_id ──── task.id
+         (逻辑外键)
 
 api_manager.id ──── subscription.api_id
          (逻辑外键，无约束)

@@ -74,6 +74,7 @@ const menuGroups = [
     key: 'tasks',
     label: '任务与订阅',
     children: [
+      { to: '/about/flash-ideas', label: '闪念管理', icon: '💡' },
       { to: '/about/task-list', label: '任务清单', icon: '📋' },
       { to: '/about/subscription-list', label: '订阅管理', icon: '📧' },
       { to: '/about/daily-summary', label: '每日总结', icon: '📋' },
@@ -84,6 +85,7 @@ const menuGroups = [
     label: '投资管理',
     children: [
       { to: '/about/daily-review', label: '每日复盘', icon: '📈' },
+      { to: '/about/research', label: '基本面研究', icon: '📋' },
       { to: '/about/review-config', label: '复盘配置', icon: '⚙️' },
     ],
   },
@@ -117,6 +119,7 @@ const filteredTabs = computed(() => {
 // 移动端标签（短标签用于移动端显示）
 const tabLabels = {
   '/about/dashboard': '看板',
+  '/about/flash-ideas': '闪念',
   '/about/profile': '关于我',
   '/about/devices': '设备',
   '/about/article-list': '文章',
@@ -126,6 +129,7 @@ const tabLabels = {
   '/about/daily-summary': '日报',
   '/about/daily-review': '复盘',
   '/about/review-config': '配置',
+  '/about/research': '研究',
 }
 </script>
 
@@ -204,13 +208,14 @@ const tabLabels = {
 /* 右侧内容面板：深色卡片，与导航呼应，保证内容清晰 */
 .content-panel {
   flex: 1;
-  min-height: calc(100vh - 92px);
-  background: #1e293b; /* 与导航卡片一致，统一协调 */
+  height: calc(100vh - 92px);
+  background: #1e293b;
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15); /* 极淡阴影，贴合原要求 */
-  color: #e2e8f0; /* 浅灰色字体，不刺眼、干净 */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
+  color: #e2e8f0;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* 适配二级内容页面的基础样式，确保文字不刺眼 */
@@ -264,16 +269,23 @@ const tabLabels = {
 
   .mobile-segments {
     display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 0;
     background: #1e293b;
     border-radius: 8px 8px 0 0;
-    overflow: hidden;
     border: 1px solid #334155;
     border-bottom: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-segments::-webkit-scrollbar {
+    display: none;
   }
 
   .segment-btn {
-    flex: 1;
-    padding: 8px 6px;
+    flex-shrink: 0;
+    padding: 12px 16px;
     border: none;
     background: transparent;
     color: #94a3b8;
@@ -281,6 +293,7 @@ const tabLabels = {
     cursor: pointer;
     transition: all 0.2s;
     border-bottom: 2px solid transparent;
+    white-space: nowrap;
   }
 
   .segment-btn.active {
@@ -338,6 +351,7 @@ const tabLabels = {
     margin-left: 0 !important;
     padding: 16px !important;
     border-radius: 8px !important;
+    height: auto !important;
     min-height: auto !important;
   }
 }

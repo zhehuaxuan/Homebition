@@ -64,6 +64,21 @@
         </div>
     </div>
 
+    <!-- 闪念录入 -->
+    <div class="flash-section" v-if="authStore.isLoggedIn()">
+      <FlashInput @saved="onFlashSaved" />
+      <div v-if="recentFlashes.length" class="recent-flashes">
+        <div class="recent-header">
+          <span class="recent-title">最近闪念</span>
+          <router-link to="/about/flash-ideas" class="recent-more">查看全部 →</router-link>
+        </div>
+        <div v-for="flash in recentFlashes" :key="flash.id" class="recent-item">
+          <span class="recent-text">{{ truncate(flash.content, 50) }}</span>
+          <span class="recent-time">{{ formatTime(flash.created_at) }}</span>
+        </div>
+      </div>
+    </div>
+
     <!-- 友情链接 -->
     <div class="work-section">
         <h2 class="work-title">友情链接</h2>
@@ -150,8 +165,12 @@
 import { ref, onMounted } from 'vue'
 import { Message, Phone } from '@element-plus/icons-vue'
 import axios from 'axios'
+import { useAuthStore } from '../stores/auth'
+import FlashInput from '../components/FlashInput.vue'
 
+const authStore = useAuthStore()
 const profile = ref('')
+const recentFlashes = ref([])
 
 const fetchProfile = async () => {
     try {
@@ -164,8 +183,39 @@ const fetchProfile = async () => {
     }
 }
 
+const fetchRecentFlashes = async () => {
+  try {
+    const { data } = await axios.get('/api/flash-ideas')
+    if (data.code === 0) {
+      recentFlashes.value = data.data.slice(0, 3)
+    }
+  } catch (e) { /* ignore */ }
+}
+
+const onFlashSaved = () => {
+  fetchRecentFlashes()
+}
+
+const formatTime = (t) => {
+  if (!t) return ''
+  const d = new Date(t)
+  const now = new Date()
+  const diff = now - d
+  if (diff < 86400000) return '今天'
+  if (diff < 172800000) return '昨天'
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+const truncate = (text, len) => {
+  if (!text) return ''
+  return text.length > len ? text.slice(0, len) + '...' : text
+}
+
 onMounted(() => {
     fetchProfile()
+    if (authStore.isLoggedIn()) {
+      fetchRecentFlashes()
+    }
 })
 </script>
 
@@ -182,6 +232,76 @@ onMounted(() => {
     align-items: center;
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+.flash-section {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0.5rem 2rem;
+}
+
+.recent-flashes {
+  margin-top: 12px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.recent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.recent-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.recent-more {
+  font-size: 12px;
+  color: #409eff;
+  text-decoration: none;
+}
+.recent-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #334155;
+}
+.recent-item:last-child {
+  border-bottom: none;
+}
+.recent-text {
+  font-size: 13px;
+  color: #cbd5e1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 12px;
+}
+.recent-time {
+  font-size: 12px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem !important;
+  }
+  .contact-item {
+    font-size: 0.8rem;
+    word-break: break-all;
+  }
+  .flash-section {
+    padding: 0.5rem 1rem;
+  }
+  .recent-flashes {
+    padding: 12px;
+  }
 }
 
 @media (max-width: 480px) {

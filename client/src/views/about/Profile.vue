@@ -15,7 +15,7 @@
       <el-input
         v-model="profile"
         type="textarea"
-        :rows="20"
+        :rows="isMobile ? 10 : 20"
         placeholder="请输入你的个人简介"
       />
       <div style="margin-top: 12px; display: flex; gap: 10px">
@@ -35,6 +35,8 @@ import axios from 'axios'
 const isEdit = ref(false)
 // 个人简介
 const profile = ref('')
+// 是否移动端
+const isMobile = ref(window.innerWidth <= 768)
 
 // 从后端获取个人简介
 const fetchProfile = async () => {

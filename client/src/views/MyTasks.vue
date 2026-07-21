@@ -84,7 +84,7 @@
 
     <!-- 任务列表视图 -->
     <div v-else>
-      <el-table :data="taskList" border stripe style="width:100%">
+      <el-table :data="taskList" border stripe style="width:100%" class="desktop-table">
         <el-table-column label="序号" type="index" width="60" align="center" />
         <el-table-column prop="title" label="任务名称" min-width="160" />
         <el-table-column prop="importance" label="重要性" width="90" />
@@ -104,11 +104,27 @@
         </el-table-column>
         <el-table-column prop="target" label="目标" min-width="180" show-overflow-tooltip />
       </el-table>
+      <!-- 移动端任务卡片 -->
+      <div class="mobile-task-cards">
+        <div v-for="(task, idx) in taskList" :key="task.id" class="mobile-task-card" @click="openTaskDetail(task)">
+          <div class="mcard-top">
+            <span class="mcard-title">{{ task.title }}</span>
+            <el-tag :type="task.status===1?'primary':task.status===2?'success':task.status===3?'warning':'info'" size="small" effect="dark">{{['待启动','进行中','已完成','挂起中'][task.status]||''}}</el-tag>
+          </div>
+          <div class="mcard-meta">
+            <span class="mcard-meta-item">重要性: {{ task.importance }}</span>
+            <span class="mcard-meta-item">进度: {{ task.progress || 0 }}%</span>
+            <span class="mcard-meta-item">工作量: {{ task.workload || 0 }}d</span>
+          </div>
+          <div class="mcard-dates">{{dateFormatter(task.create_time)}} → {{dateFormatter(task.close_time)}}</div>
+          <div v-if="task.target" class="mcard-target">{{ task.target }}</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- 任务详情弹窗 -->
-  <el-dialog v-model="detailVisible" title="任务详情" width="700px" append-to-body>
+  <el-dialog v-model="detailVisible" title="任务详情" width="700px" append-to-body class="my-tasks-dialog">
     <div v-if="detailData" class="detail-box">
       <el-descriptions :column="2" border size="small">
         <el-descriptions-item label="任务名称">{{ detailData.title }}</el-descriptions-item>
@@ -170,14 +186,19 @@ const progressList = ref([])
 const feedbackContent = ref('')
 const feedbackProgress = ref(0)
 
-function handleGridTaskClick(seg) {
-  const task = taskList.value.find(t => t.id === parseInt(seg.id.split('-')[0]))
+function openTaskDetail(task) {
   if (!task) return
   detailData.value = { ...task }
   feedbackContent.value = ''
   feedbackProgress.value = task.progress || 0
   loadProgressList(task.id)
   detailVisible.value = true
+}
+
+function handleGridTaskClick(seg) {
+  const task = taskList.value.find(t => t.id === parseInt(seg.id.split('-')[0]))
+  if (!task) return
+  openTaskDetail(task)
 }
 
 async function loadProgressList(taskId) {
@@ -496,4 +517,174 @@ onMounted(() => { fetchData() })
 .bar-text { font-size: 11px; color: #fff; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; }
 .task-bar.status-0 { opacity: 0.8; }
 .task-bar.status-2 { opacity: 0.65; }
+
+/* 桌面端表格 - 移动端隐藏 */
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none !important;
+  }
+}
+
+/* 移动端任务卡片 - 默认隐藏，移动端显示 */
+.mobile-task-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .mobile-task-cards {
+    display: flex;
+  }
+}
+
+.mobile-task-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.mobile-task-card:hover {
+  background: #2d3a52;
+}
+.mobile-task-card:active {
+  background: #334155;
+}
+
+.mcard-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.mcard-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.3;
+  flex: 1;
+  word-break: break-word;
+}
+
+.mcard-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 6px;
+}
+.mcard-meta-item {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.mcard-dates {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.mcard-target {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 响应式布局 - 平板及以下 */
+@media (max-width: 768px) {
+  .my-tasks-container {
+    padding: 12px;
+  }
+
+  .stat-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .stat-card-icon {
+    width: 36px;
+    height: 36px;
+  }
+  .stat-card-number {
+    font-size: 20px;
+  }
+
+  .month-bar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .view-controls {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .month-nav {
+    justify-content: center;
+  }
+  .month-title {
+    font-size: 16px;
+    min-width: 100px;
+  }
+
+  /* 月视图水平滚动 */
+  .month-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .grid-body,
+  .grid-header {
+    min-width: 630px;
+  }
+}
+
+/* 响应式布局 - 小屏手机 */
+@media (max-width: 480px) {
+  .stat-cards {
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .stat-card-icon {
+    width: 32px;
+    height: 32px;
+  }
+  .stat-card-number {
+    font-size: 18px;
+  }
+  .stat-card-label {
+    font-size: 11px;
+  }
+}
+</style>
+
+<style>
+/* 非 scoped: el-dialog 使用 append-to-body 渲染在组件外 */
+@media (max-width: 768px) {
+  .my-tasks-dialog {
+    width: 92% !important;
+    max-width: 92% !important;
+  }
+}
+@media (max-width: 480px) {
+  .my-tasks-dialog {
+    width: 96% !important;
+    max-width: 96% !important;
+  }
+}
 </style>

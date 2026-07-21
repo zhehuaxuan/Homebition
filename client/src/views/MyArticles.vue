@@ -88,7 +88,7 @@
 /* 移动端适配 */
 @media (max-width: 768px) {
     .article-page {
-        margin: 12px 16px 0;
+        margin: 8px 12px 0;
     }
 
     .article-header {
@@ -98,27 +98,51 @@
     .article-item {
         flex-wrap: wrap;
         height: auto;
-        padding: 10px 0;
-        border-bottom: 1px solid #334155;
+        padding: 12px 14px;
+        margin-bottom: 8px;
+        border-bottom: none;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        background: #1e293b;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    .article-item:hover {
+        background: #2d3a52;
+        border-radius: 8px;
+    }
+    .article-item:active {
+        background: #2d3a52;
     }
 
     .article-item .col-index {
         width: auto;
-        margin-right: 6px;
+        margin-right: 8px;
+        font-size: 12px;
+        color: #64748b;
+        order: 2;
     }
 
     .article-item .col-date {
         width: auto;
         font-size: 12px;
+        color: #64748b;
+        order: 1;
+        margin-right: auto;
     }
 
     .article-item .col-title {
         width: 100%;
-        margin-top: 4px;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #334155;
         font-size: 14px;
+        color: #e2e8f0;
         white-space: normal;
         overflow: visible;
         text-overflow: unset;
+        line-height: 1.5;
+        order: 3;
     }
 }
 </style>

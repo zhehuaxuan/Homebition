@@ -239,9 +239,22 @@ onMounted(loadGroups)
   gap: 8px;
 }
 .add-input {
-  width: 200px;
+  max-width: 200px;
 }
 .add-input.code {
-  width: 140px;
+  max-width: 140px;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 8px;
+  }
+  .add-row {
+    flex-direction: column;
+  }
+  .add-input {
+    max-width: none;
+    width: 100%;
+  }
 }
 </style>

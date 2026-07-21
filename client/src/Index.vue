@@ -33,7 +33,7 @@ const mobileLinks = computed(() => {
     ]
     if (authStore.isLoggedIn()) {
         links.push({ path: '/tasks', label: '我的任务', icon: '✅' })
-        links.push({ path: '/about', label: '关于我', icon: '⚙️' })
+        links.push({ path: '/about', label: '后台管理', icon: '⚙️' })
     }
     if (!authStore.isLoggedIn()) {
         links.push({ path: '/login', label: '登录', icon: '🔑' })
@@ -87,6 +87,10 @@ onUnmounted(() => {
     <!-- 手机端遮罩层 -->
     <div v-if="menuOpen" class="mobile-overlay" @click="closeMenu">
         <div class="mobile-menu" @click.stop>
+            <button class="mobile-close-btn" @click="closeMenu" aria-label="关闭菜单">
+                <span class="close-line"></span>
+                <span class="close-line"></span>
+            </button>
             <router-link v-for="link in mobileLinks" :key="link.path" :to="link.path" class="mobile-menu-item" @click="closeMenu">
                 <span class="mobile-menu-icon">{{ link.icon }}</span>
                 <span>{{ link.label }}</span>
@@ -157,6 +161,37 @@ onUnmounted(() => {
     background: #1e293b;
     padding: 20px 0;
     overflow-y: auto;
+}
+
+.mobile-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0 12px 8px auto;
+    background: none;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+}
+.mobile-close-btn:hover {
+    background: #2d3a52;
+}
+.mobile-close-btn .close-line {
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background: #cbd5e1;
+    border-radius: 1px;
+}
+.mobile-close-btn .close-line:nth-child(1) {
+    transform: rotate(45deg);
+}
+.mobile-close-btn .close-line:nth-child(2) {
+    transform: rotate(-45deg);
 }
 
 .mobile-menu-item {

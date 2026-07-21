@@ -8,6 +8,7 @@
       </div>
     </div>
 
+    <div class="desktop-table">
     <el-table
       :data="list"
       v-loading="loading"
@@ -51,8 +52,39 @@
         </template>
       </el-table-column>
     </el-table>
+    </div>
 
-    <!-- 查看/编辑对话框 -->
+    <!-- 移动端卡片列表 -->
+    <div class="mobile-card-list" v-loading="loading">
+      <div v-for="item in list" :key="item.date" class="mobile-card">
+        <div class="card-header">
+          <span class="card-date">{{ formatDate(item.date) }}</span>
+          <span class="card-time">{{ item.submitted_at ? formatTime(item.submitted_at) : '-' }}</span>
+        </div>
+        <div class="card-body">
+          <div v-if="item.work_progress" class="card-field">
+            <span class="field-label">📋 本日工作</span>
+            <span class="field-value">{{ item.work_progress }}</span>
+          </div>
+          <div v-if="item.next_plan" class="card-field">
+            <span class="field-label">🎯 下一步</span>
+            <span class="field-value">{{ item.next_plan }}</span>
+          </div>
+          <div v-if="item.risk_items" class="card-field">
+            <span class="field-label">⚠️ 风险项</span>
+            <span class="field-value">{{ item.risk_items }}</span>
+          </div>
+        </div>
+        <div class="card-actions">
+          <el-button size="small" type="primary" @click="openEdit(item)">编辑</el-button>
+          <el-popconfirm title="确定要删除此日报吗？" @confirm="handleDelete(item.date)">
+            <template #reference>
+              <el-button size="small" type="danger">删除</el-button>
+            </template>
+          </el-popconfirm>
+        </div>
+      </div>
+    </div>
     <el-dialog
       v-model="dialogVisible"
       :title="dialogMode === 'add' ? '新建日报' : (dialogMode === 'edit' ? '编辑日报 - ' + formatDate(dialogForm.date) : formatDate(dialogForm.date) + ' 日报')"
@@ -265,5 +297,92 @@ onMounted(() => {
   color: #cbd5e1;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.mobile-card-list {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #334155;
+}
+
+.card-date {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.card-time {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.field-value {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #334155;
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 0;
+  }
+  .desktop-table {
+    display: none;
+  }
+  .mobile-card-list {
+    display: flex;
+  }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 </style>

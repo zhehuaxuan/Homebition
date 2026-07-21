@@ -55,6 +55,10 @@ const routes = [
         name: 'TagList',
         component: () => import('../views/about/Tag.vue')
       }, {
+        path: 'flash-ideas',
+        name: 'FlashIdeas',
+        component: () => import('../views/about/FlashIdeas.vue')
+      }, {
         path: 'subscription-list',
         name: 'SubscriptionList',
         component: () => import('../views/about/Subscription.vue')
@@ -75,6 +79,14 @@ const routes = [
         name: 'ReviewConfig',
         component: () => import('../views/about/ReviewConfig.vue')
       },{
+        path: 'research',
+        name: 'AboutResearchList',
+        component: () => import('../views/invest/ResearchList.vue')
+      },{
+        path: 'research/:id',
+        name: 'AboutResearchDetail',
+        component: () => import('../views/invest/ResearchDetail.vue')
+      },{
         path: '/article/add',
         name: 'ArticleAdd',
         component: () => import('../views/article/ArticleEdit.vue')
@@ -86,7 +98,7 @@ const routes = [
       },
       {
         path: '',
-        redirect: '/about/task-list'
+        redirect: '/about/dashboard'
       }
     ]
   },
@@ -104,6 +116,16 @@ const routes = [
         path: 'market',
         name: 'Market',
         component: () => import('../views/invest/Market.vue')
+      },
+      {
+        path: 'research',
+        name: 'ResearchList',
+        component: () => import('../views/invest/ResearchList.vue')
+      },
+      {
+        path: 'research/:id',
+        name: 'ResearchDetail',
+        component: () => import('../views/invest/ResearchDetail.vue')
       },
       {
         path: '',

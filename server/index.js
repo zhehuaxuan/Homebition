@@ -70,6 +70,12 @@ const dailySummaryRouter = require('./routes/dailySummary');
 app.use('/api', dailySummaryRouter);
 const investmentReviewRouter = require('./routes/investmentReview');
 app.use('/api', investmentReviewRouter);
+const fundamentalResearchRouter = require('./routes/fundamentalResearch');
+app.use('/api', fundamentalResearchRouter);
+const dashboardRouter = require('./routes/dashboard');
+app.use('/api', dashboardRouter);
+const flashIdeasRouter = require('./routes/flashIdeas');
+app.use('/api', flashIdeasRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {
@@ -92,6 +98,9 @@ dailySummaryRouter.initDailySummaryTable(pool);
     await investmentReviewRouter.initTables(pool);
     await investmentReviewRouter.seedDefaultConfig(pool);
 })();
+
+// 8.7 初始化基本面研究表
+fundamentalResearchRouter.initTables(pool);
 
 // 7. 初始化邮件服务
 const mailConfig = require('./config/mail');

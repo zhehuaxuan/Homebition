@@ -2,7 +2,7 @@
 
 > **日期**: 2026-07-13
 > **版本**: v1 (current)
-> **覆盖**: 全部 10 个路由模块，约 50+ 个接口
+> **覆盖**: 全部 11 个路由模块，约 55+ 个接口
 
 ---
 
@@ -427,6 +427,59 @@ WangEditor 富文本图片上传。
 ### POST /api/api/test/:id
 
 测试接口（发送 GET 请求，仅支持 JSON 响应）。
+
+---
+
+## 11. 闪念模块（flashIdeas.js）
+
+路由文件：`server/routes/flashIdeas.js`，表：`flash_ideas`
+
+### GET /api/flash-ideas
+
+获取闪念列表（倒序，含关联任务信息）。自动检测关联任务状态：若任务已完成（status=2）且闪念非 forest，自动升级为 forest。
+
+**响应:**
+```json
+{
+  "code": 0,
+  "data": [
+    {
+      "id": 1,
+      "content": "闪念内容",
+      "status": "tree",
+      "task_id": 5,
+      "task_title": "关联任务名称",
+      "task_status": 1,
+      "created_at": "2026-07-21T10:00:00.000Z",
+      "updated_at": "2026-07-21T10:30:00.000Z"
+    }
+  ]
+}
+```
+
+### POST /api/flash-ideas
+
+新建闪念。
+
+**请求:** `{ "content": "闪念内容" }`
+**响应:** `{ "code": 0, "data": { "id": 1, "content": "...", "status": "sapling", ... } }`
+
+### PUT /api/flash-ideas/:id
+
+更新闪念。支持以下可选字段：
+- `content` — 编辑内容
+- `task_id` — 关联任务 ID，传 `null` 取消关联
+- `status` — 手动变更状态（'sapling' | 'tree' | 'forest'）
+
+处理顺序：先处理 task_id（自动设 status='tree'），再处理显式 status 覆盖。
+
+**请求:** `{ "task_id": 5 }` 或 `{ "status": "forest" }` 或 `{ "task_id": null, "status": "sapling" }`
+**响应:** `{ "code": 0, "data": { ... } }`
+
+### DELETE /api/flash-ideas/:id
+
+删除闪念。
+**响应:** `{ "code": 0, "message": "删除成功" }`
 
 **响应:**
 ```json

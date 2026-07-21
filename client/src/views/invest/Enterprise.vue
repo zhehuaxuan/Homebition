@@ -79,31 +79,75 @@
       <!-- 行业维度评估 -->
       <div class="evaluation-section">
         <h3>一、选行业维度评估（权重 60%）</h3>
-        <el-table :data="evaluationData.industryItems" border stripe size="small">
-          <el-table-column prop="指标" label="评估指标" width="180" />
-          <el-table-column prop="权重" label="权重" width="80" align="center" />
-          <el-table-column prop="得分" label="得分" width="80" align="center">
-            <template #default="scope">
-              <span class="score-badge">{{ scope.row.得分 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="依据" label="打分依据" />
-        </el-table>
+        <div class="desktop-table">
+          <el-table :data="evaluationData.industryItems" border stripe size="small">
+            <el-table-column prop="指标" label="评估指标" width="180" />
+            <el-table-column prop="权重" label="权重" width="80" align="center" />
+            <el-table-column prop="得分" label="得分" width="80" align="center">
+              <template #default="scope">
+                <span class="score-badge">{{ scope.row.得分 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="依据" label="打分依据" />
+          </el-table>
+        </div>
+        <div class="mobile-cards">
+          <div v-for="(item, index) in evaluationData.industryItems" :key="'ind-mobile-' + index" class="mobile-card">
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">评估指标</span>
+              <span class="mobile-card-value">{{ item.指标 }}</span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">权重</span>
+              <span class="mobile-card-value">{{ item.权重 }}</span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">得分</span>
+              <span class="mobile-card-value"><span class="score-badge">{{ item.得分 }}</span></span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">打分依据</span>
+              <span class="mobile-card-value">{{ item.依据 }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 公司维度评估 -->
       <div class="evaluation-section">
         <h3>二、选公司维度评估（权重 40%）</h3>
-        <el-table :data="evaluationData.companyItems" border stripe size="small">
-          <el-table-column prop="指标" label="评估指标" width="180" />
-          <el-table-column prop="权重" label="权重" width="80" align="center" />
-          <el-table-column prop="得分" label="得分" width="80" align="center">
-            <template #default="scope">
-              <span class="score-badge">{{ scope.row.得分 }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="依据" label="打分依据" />
-        </el-table>
+        <div class="desktop-table">
+          <el-table :data="evaluationData.companyItems" border stripe size="small">
+            <el-table-column prop="指标" label="评估指标" width="180" />
+            <el-table-column prop="权重" label="权重" width="80" align="center" />
+            <el-table-column prop="得分" label="得分" width="80" align="center">
+              <template #default="scope">
+                <span class="score-badge">{{ scope.row.得分 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="依据" label="打分依据" />
+          </el-table>
+        </div>
+        <div class="mobile-cards">
+          <div v-for="(item, index) in evaluationData.companyItems" :key="'comp-mobile-' + index" class="mobile-card">
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">评估指标</span>
+              <span class="mobile-card-value">{{ item.指标 }}</span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">权重</span>
+              <span class="mobile-card-value">{{ item.权重 }}</span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">得分</span>
+              <span class="mobile-card-value"><span class="score-badge">{{ item.得分 }}</span></span>
+            </div>
+            <div class="mobile-card-row">
+              <span class="mobile-card-label">打分依据</span>
+              <span class="mobile-card-value">{{ item.依据 }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 综合评价 -->
@@ -471,5 +515,92 @@ const handleReset = () => {
 
 :deep(.el-table th.el-table__cell) {
   background-color: #1e293b !important;
+}
+
+/* 桌面端表格显示，移动端隐藏 */
+.desktop-table {
+  display: block;
+}
+
+.mobile-cards {
+  display: none;
+}
+
+/* 移动端卡片样式 */
+.mobile-card {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.mobile-card-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #334155;
+  font-size: 13px;
+}
+
+.mobile-card-row:last-child {
+  border-bottom: none;
+}
+
+.mobile-card-label {
+  color: #64748b;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.mobile-card-value {
+  color: #e2e8f0;
+  text-align: right;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .enterprise-page {
+    padding: 0 12px;
+  }
+
+  .search-container {
+    margin: 20px auto 0;
+  }
+
+  .score-card {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .score-value {
+    font-size: 40px;
+  }
+
+  .score-detail {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .score-item .value {
+    font-size: 22px;
+  }
+
+  .overview-section {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-table {
+    display: none;
+  }
+
+  .mobile-cards {
+    display: block;
+  }
+
+  .result-box {
+    padding: 16px;
+  }
 }
 </style>

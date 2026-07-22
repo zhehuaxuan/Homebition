@@ -1,0 +1,48 @@
+{
+  "pages": [
+    {"path": "pages/login/index", "style": {"navigationBarTitleText": "登录"}},
+    {"path": "pages/task/list", "style": {"navigationBarTitleText": "任务管理"}},
+    {"path": "pages/task/detail", "style": {"navigationBarTitleText": "任务详情"}},
+    {"path": "pages/task/edit", "style": {"navigationBarTitleText": "编辑任务"}},
+    {"path": "pages/task/progress-add", "style": {"navigationBarTitleText": "添加进展"}},
+    {"path": "pages/flash/list", "style": {"navigationBarTitleText": "闪念"}},
+    {"path": "pages/flash/create", "style": {"navigationBarTitleText": "记录闪念"}},
+    {"path": "pages/flash/edit", "style": {"navigationBarTitleText": "编辑闪念"}},
+    {"path": "pages/invest/index", "style": {"navigationBarTitleText": "投资管理"}},
+    {"path": "pages/invest/verify", "style": {"navigationBarTitleText": "公司验证"}},
+    {"path": "pages/invest/evaluate", "style": {"navigationBarTitleText": "基本面评估"}},
+    {"path": "pages/invest/review", "style": {"navigationBarTitleText": "每日复盘"}}
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "Homebition",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#999",
+    "selectedColor": "#409EFF",
+    "backgroundColor": "#fff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/task/list",
+        "text": "任务",
+        "iconPath": "static/task.png",
+        "selectedIconPath": "static/task-active.png"
+      },
+      {
+        "pagePath": "pages/flash/list",
+        "text": "闪念",
+        "iconPath": "static/flash.png",
+        "selectedIconPath": "static/flash-active.png"
+      },
+      {
+        "pagePath": "pages/invest/index",
+        "text": "投资",
+        "iconPath": "static/invest.png",
+        "selectedIconPath": "static/invest-active.png"
+      }
+    ]
+  }
+}

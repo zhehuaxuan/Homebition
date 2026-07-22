@@ -1,7 +1,7 @@
 <template>
   <view class="page-container">
     <!-- 今日复盘入口 -->
-    <view class="today-card" @click="showForm = true">
+    <view class="today-card" @click="openForm">
       <text class="today-label">今日复盘</text>
       <text class="today-desc">{{ todayReview ? '已填写' : '点击填写今日复盘' }}</text>
     </view>
@@ -9,7 +9,7 @@
     <!-- 复盘表单弹窗 -->
     <uni-popup v-if="showForm" type="dialog" @close="showForm = false">
       <view class="popup-content">
-        <text class="popup-title">{{ isTodayReviewed ? '编辑今日复盘' : '填写今日复盘' }}</text>
+        <text class="popup-title">{{ todayReview ? '编辑今日复盘' : '填写今日复盘' }}</text>
         <textarea class="review-textarea" v-model="reviewContent" placeholder="记录今天的投资思考..." />
         <view class="popup-btns">
           <button @click="showForm = false">取消</button>
@@ -22,8 +22,8 @@
     <view class="section-title">历史复盘</view>
     <scroll-view class="list-scroll" scroll-y>
       <view v-for="item in reviewList" :key="item.id" class="review-card">
-        <text class="review-date">{{ item.date || item.create_time?.slice(0, 10) }}</text>
-        <text class="review-text">{{ item.content }}</text>
+        <text class="review-date">{{ item.review_date }}</text>
+        <text class="review-text">{{ item.free_notes || '暂无记录' }}</text>
       </view>
       <view v-if="reviewList.length === 0" class="empty-state">
         <text>暂无复盘记录</text>
@@ -45,18 +45,24 @@ export default {
     }
   },
   computed: {
-    isTodayReviewed() { return !!this.todayReview }
+    todayDate() {
+      return new Date().toISOString().slice(0, 10)
+    }
   },
   onShow() { this.loadReviews() },
   methods: {
+    openForm() {
+      if (this.todayReview) this.reviewContent = this.todayReview.free_notes || ''
+      else this.reviewContent = ''
+      this.showForm = true
+    },
     async loadReviews() {
       try {
-        const res = await request({ url: '/api/investment-review/list' })
-        if (res && res.code === 200) {
-          this.reviewList = res.list || []
-          const today = new Date().toISOString().slice(0, 10)
+        const res = await request({ url: '/api/invest/review' })
+        if (res && res.code === 0) {
+          this.reviewList = res.data || []
           this.todayReview = this.reviewList.find(r =>
-            (r.date || r.create_time?.slice(0, 10)) === today
+            r.review_date === this.todayDate
           ) || null
         }
       } catch (err) {
@@ -66,10 +72,11 @@ export default {
     async saveReview() {
       if (!this.reviewContent.trim()) return
       try {
+        const today = this.todayDate
         await request({
-          url: '/api/investment-review/save',
-          method: 'POST',
-          data: { content: this.reviewContent.trim() }
+          url: '/api/invest/review/' + today,
+          method: 'PUT',
+          data: { free_notes: this.reviewContent.trim() }
         })
         uni.showToast({ title: '保存成功', icon: 'success' })
         this.showForm = false

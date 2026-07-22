@@ -70,10 +70,10 @@ export default {
       statusMap: { 0: '待启动', 1: '进行中', 2: '已完成' }
     }
   },
-  onLoad(options) {
+  async onLoad(options) {
     this.id = options.id
+    await this.loadTasks()
     this.loadFlash()
-    this.loadTasks()
   },
   methods: {
     async loadFlash() {

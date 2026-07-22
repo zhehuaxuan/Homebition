@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const jwtConfig = require('../config/jwt');
 const { sendMail } = require('../services/mail');
 const mailConfig = require('../config/mail');
 
@@ -92,6 +94,41 @@ router.post('/auth/login', async (req, res) => {
         }
     } catch (err) {
         console.error('登录失败:', err);
+        res.status(500).json({
+            code: 500,
+            message: '服务器错误'
+        });
+    }
+});
+
+// 小程序 JWT 登录
+router.post('/auth/mini/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const [rows] = await req.db.execute('SELECT * FROM `user` WHERE `username` = ?', [username]);
+        const user = rows[0];
+
+        if (user && user.password === password) {
+            const token = jwt.sign(
+                { username: user.username },
+                jwtConfig.secret,
+                { expiresIn: jwtConfig.expiresIn }
+            );
+            res.json({
+                code: 0,
+                message: '登录成功',
+                token,
+                user: { username: user.username }
+            });
+        } else {
+            res.status(401).json({
+                code: 401,
+                message: '用户名或密码错误'
+            });
+        }
+    } catch (err) {
+        console.error('小程序登录失败:', err);
         res.status(500).json({
             code: 500,
             message: '服务器错误'

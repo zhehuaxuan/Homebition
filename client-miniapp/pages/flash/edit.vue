@@ -85,6 +85,11 @@ export default {
             this.content = item.content
             this.status = item.status
             this.taskId = item.task_id
+            // Look up task title if tasks already loaded
+            if (this.taskId && this.taskList.length) {
+              const t = this.taskList.find(t => t.id === this.taskId)
+              if (t) this.taskTitle = t.title
+            }
           }
         }
       } catch (err) {

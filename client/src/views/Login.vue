@@ -26,10 +26,11 @@
                         placeholder="请输入密码"
                         :prefix-icon="Lock"
                         show-password
+                        @keyup.enter="handleLogin"
                     />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" class="login-btn" :loading="loading" @click="handleLogin">
+                    <el-button type="primary" class="login-btn" :loading="loading" @click="handleLogin" ref="loginBtnRef">
                         登录
                     </el-button>
                 </el-form-item>
@@ -39,16 +40,24 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import axios from 'axios'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const formRef = ref(null)
 const loading = ref(false)
+const loginBtnRef = ref(null)
+
+onMounted(() => {
+  setTimeout(() => {
+    loginBtnRef.value?.$el?.focus()
+  }, 100)
+})
 
 const form = reactive({
     username: '',
@@ -68,18 +77,13 @@ const handleLogin = async () => {
 
         loading.value = true
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form)
-            })
-            const data = await response.json()
-            if (response.ok) {
-                authStore.setLogin(data.token, data.user.username)
+            const response = await axios.post('/api/auth/login', form)
+            if (response.data.token) {
+                authStore.setLogin(response.data.token, response.data.user.username)
                 ElMessage.success('登录成功')
                 router.push('/')
             } else {
-                ElMessage.error(data.message || '登录失败')
+                ElMessage.error(response.data.message || '登录失败')
             }
         } catch (error) {
             ElMessage.error('登录失败，请稍后重试')

@@ -11,6 +11,17 @@ import axios from 'axios'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 
 // axios 全局配置：自动附带 token + 请求计时
+if (window.electronAPI) {
+  // Electron 桌面端：从主进程获取后端地址
+  let backendUrl = null
+  axios.interceptors.request.use(async config => {
+    if (!backendUrl) {
+      backendUrl = await window.electronAPI.getBackendUrl()
+    }
+    config.baseURL = backendUrl
+    return config
+  })
+}
 axios.interceptors.request.use(config => {
     const token = sessionStorage.getItem('token')
     if (token) {

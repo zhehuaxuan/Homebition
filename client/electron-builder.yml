@@ -1,0 +1,25 @@
+appId: com.homebition.app
+productName: Homebition
+directories:
+  output: dist_electron
+  buildResources: build
+files:
+  - out/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64

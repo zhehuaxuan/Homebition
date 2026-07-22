@@ -163,7 +163,8 @@
       </div>
 
       <div class="result-actions">
-        <el-button type="primary" @click="handleReset">评估其他公司</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave">保存到基本面研究</el-button>
+        <el-button @click="handleReset">评估其他公司</el-button>
       </div>
     </div>
   </div>
@@ -181,7 +182,9 @@ const loading = ref(false)
 const confirmInfo = ref(null)
 const errorMsg = ref('')
 const evaluating = ref(false)
+const saving = ref(false)
 const evaluationData = ref(null)
+const savedCompanyInfo = ref(null)
 
 const handleSearch = async () => {
   if (!searchText.value.trim()) {
@@ -222,6 +225,7 @@ const handleConfirm = async () => {
   if (!companyInfo) return
 
   evaluating.value = true
+  savedCompanyInfo.value = { name: companyInfo.name, code: companyInfo.code || '' }
   confirmInfo.value = null
 
   try {
@@ -264,6 +268,38 @@ const handleReset = () => {
   evaluationData.value = null
   confirmInfo.value = null
   searchText.value = ''
+  savedCompanyInfo.value = null
+}
+
+const handleSave = async () => {
+  if (!evaluationData.value || !savedCompanyInfo.value) return
+  saving.value = true
+  try {
+    const d = evaluationData.value
+    const res = await axios.post('/api/invest/research/create', {
+      companyName: savedCompanyInfo.value.name,
+      companyCode: savedCompanyInfo.value.code,
+      totalScore: d.totalScore,
+      industryScore: d.industryScore,
+      companyScore: d.companyScore,
+      industryItems: d.industryItems,
+      companyItems: d.companyItems,
+      pros: d.pros,
+      cons: d.cons,
+      strategy: d.strategy,
+      summary: d.summary
+    })
+    if (res.data.code === 0) {
+      ElMessage.success(`已保存到基本面研究（${res.data.data.version}）`)
+    } else {
+      ElMessage.error(res.data.message || '保存失败')
+    }
+  } catch (err) {
+    console.error('保存失败', err)
+    ElMessage.error('保存失败，请稍后重试')
+  } finally {
+    saving.value = false
+  }
 }
 </script>
 

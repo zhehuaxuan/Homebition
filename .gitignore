@@ -1,1 +1,4 @@
 .superpowers/
+client/dist_electron
+client/out
+client/dist

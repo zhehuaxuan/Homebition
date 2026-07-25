@@ -8,21 +8,28 @@ const logger = require('../services/logger');
 router.get('/flash-ideas', async (req, res) => {
     try {
         const [rows] = await req.db.query(`
-            SELECT f.id, f.content, f.status, f.task_id, f.created_at, f.updated_at,
+            SELECT f.id, f.content, f.summary, f.status, f.task_id, f.created_at, f.updated_at,
                    t.title AS task_title, t.status AS task_status
             FROM flash_ideas f
             LEFT JOIN task t ON f.task_id = t.id
             ORDER BY f.created_at DESC
         `);
-        // 自动检测：如果关联的任务已完成，状态升为 forest
-        const updated = rows.map(row => {
-            if (row.task_id && row.task_status === 2 && row.status !== 'forest') {
-                req.db.query('UPDATE flash_ideas SET status = ? WHERE id = ?', ['forest', row.id]);
-                return { ...row, status: 'forest' };
+        // 自动检测：如果关联的任务已完成，闪念自动变为 completed
+        const autoCompleted = [];
+        for (const row of rows) {
+            if (row.task_id && row.task_status === 2 && row.status !== 'completed') {
+                await req.db.query('UPDATE flash_ideas SET status = ? WHERE id = ?', ['completed', row.id]);
+                autoCompleted.push(row.id);
             }
-            return row;
-        });
-        res.json({ code: 0, data: updated });
+        }
+        if (autoCompleted.length) {
+            logger.info('[flashIdeas] 自动完成闪念', { ids: autoCompleted });
+        }
+        const data = rows.map(row => ({
+            ...row,
+            status: (row.task_id && row.task_status === 2) ? 'completed' : row.status
+        }));
+        res.json({ code: 0, data });
     } catch (err) {
         logger.error('[flashIdeas] 查询列表失败', { error: err.message });
         res.status(500).json({ code: 500, message: err.message });
@@ -42,7 +49,10 @@ router.post('/flash-ideas', async (req, res) => {
             'INSERT INTO flash_ideas (content) VALUES (?)',
             [content.trim()]
         );
-        const [rows] = await req.db.query('SELECT * FROM flash_ideas WHERE id = ?', [result.insertId]);
+        const [rows] = await req.db.query(
+            'SELECT id, content, summary, status, task_id, created_at, updated_at FROM flash_ideas WHERE id = ?',
+            [result.insertId]
+        );
         res.json({ code: 0, data: rows[0] });
     } catch (err) {
         logger.error('[flashIdeas] 创建失败', { error: err.message });
@@ -56,11 +66,18 @@ router.post('/flash-ideas', async (req, res) => {
 router.put('/flash-ideas/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { content, task_id, status } = req.body;
+        const { content, task_id, status, summary } = req.body;
 
         const [existing] = await req.db.query('SELECT * FROM flash_ideas WHERE id = ?', [id]);
         if (!existing.length) {
             return res.status(404).json({ code: 404, message: '闪念不存在' });
+        }
+
+        // 验证：无关联任务时完成必须提供 summary
+        const current = existing[0];
+        const effectiveTaskId = task_id !== undefined ? task_id : current.task_id;
+        if (status === 'completed' && !effectiveTaskId && (!summary || !summary.trim())) {
+            return res.status(400).json({ code: 400, message: '独立完成的闪念需要填写完成小结' });
         }
 
         const updates = [];
@@ -72,12 +89,14 @@ router.put('/flash-ideas/:id', async (req, res) => {
         if (task_id !== undefined) {
             updates.push('task_id = ?');
             params.push(task_id || null);
-            updates.push('status = ?');
-            params.push('tree');
         }
         if (status !== undefined) {
             updates.push('status = ?');
             params.push(status);
+        }
+        if (summary !== undefined) {
+            updates.push('summary = ?');
+            params.push(summary);
         }
         if (updates.length === 0) {
             return res.status(400).json({ code: 400, message: '没有需要更新的字段' });
@@ -86,7 +105,14 @@ router.put('/flash-ideas/:id', async (req, res) => {
         params.push(id);
         await req.db.query(`UPDATE flash_ideas SET ${updates.join(', ')} WHERE id = ?`, params);
 
-        const [rows] = await req.db.query('SELECT * FROM flash_ideas WHERE id = ?', [id]);
+        const [rows] = await req.db.query(
+            `SELECT f.id, f.content, f.summary, f.status, f.task_id, f.created_at, f.updated_at,
+                    t.title AS task_title, t.status AS task_status
+             FROM flash_ideas f
+             LEFT JOIN task t ON f.task_id = t.id
+             WHERE f.id = ?`,
+            [id]
+        );
         res.json({ code: 0, data: rows[0] });
     } catch (err) {
         logger.error('[flashIdeas] 更新失败', { error: err.message });

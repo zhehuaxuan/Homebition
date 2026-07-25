@@ -31,6 +31,13 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api'],
+      },
+    },
   }, server: {
     host: true, // 👈 必须加这个！允许 127.0.0.1 访问
     port: 5173

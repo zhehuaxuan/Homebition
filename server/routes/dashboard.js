@@ -107,6 +107,11 @@ router.get('/dashboard', async (req, res) => {
             'SELECT COUNT(*) as count FROM subscription WHERE status = 1'
         );
 
+        // 7a. 闪念总数统计
+        const [flashCountRows] = await db.query(
+            'SELECT COUNT(*) as count FROM flash_ideas'
+        );
+
         // 7b. 最新闪念
         const [latestFlashIdeas] = await db.query(
             `SELECT id, content, status, created_at
@@ -249,7 +254,7 @@ router.get('/dashboard', async (req, res) => {
                         submittedAt: toDateTimeStr(latestSummaryRows[0].submitted_at)
                     } : null,
                     activeSubscriptionCount: subCountRows[0].count,
-                    flashIdeasCount: latestFlashIdeas.length
+                    flashIdeasCount: flashCountRows[0].count
                 },
                 recentTasks: recentTasks.map(t => ({
                     id: t.id,

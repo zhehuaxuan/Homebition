@@ -75,6 +75,7 @@ const menuGroups = [
     label: '任务与订阅',
     children: [
       { to: '/about/flash-ideas', label: '闪念管理', icon: '💡' },
+      { to: '/about/workflow-tasks', label: '工作流任务', icon: '📋' },
       { to: '/about/task-list', label: '任务清单', icon: '📋' },
       { to: '/about/subscription-list', label: '订阅管理', icon: '📧' },
       { to: '/about/daily-summary', label: '每日总结', icon: '📋' },
@@ -119,6 +120,7 @@ const filteredTabs = computed(() => {
 // 移动端标签（短标签用于移动端显示）
 const tabLabels = {
   '/about/dashboard': '看板',
+  '/about/workflow-tasks': '工作流',
   '/about/flash-ideas': '闪念',
   '/about/profile': '关于我',
   '/about/devices': '设备',
@@ -215,7 +217,7 @@ const tabLabels = {
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.15);
   color: #e2e8f0;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 /* 适配二级内容页面的基础样式，确保文字不刺眼 */

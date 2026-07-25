@@ -76,6 +76,8 @@ const dashboardRouter = require('./routes/dashboard');
 app.use('/api', dashboardRouter);
 const flashIdeasRouter = require('./routes/flashIdeas');
 app.use('/api', flashIdeasRouter);
+const workflowTaskRouter = require('./routes/workflowTask');
+app.use('/api', workflowTaskRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {

@@ -55,6 +55,26 @@ const routes = [
         name: 'TagList',
         component: () => import('../views/about/Tag.vue')
       }, {
+        path: 'workflow-tasks',
+        name: 'WorkflowTaskList',
+        component: () => import('../views/about/WorkflowTaskList.vue')
+      }, {
+        path: 'workflow-tasks/create',
+        name: 'WorkflowTaskCreate',
+        component: () => import('../views/about/WorkflowTaskForm.vue')
+      }, {
+        path: 'workflow-tasks/:id',
+        name: 'WorkflowTaskDetail',
+        component: () => import('../views/about/WorkflowTaskDetail.vue')
+      }, {
+        path: 'workflow-tasks/:id/edit',
+        name: 'WorkflowTaskEdit',
+        component: () => import('../views/about/WorkflowTaskForm.vue')
+      }, {
+        path: 'workflow-tasks/:id/progress',
+        name: 'WorkflowTaskProgress',
+        component: () => import('../views/about/WorkflowTaskProgress.vue')
+      }, {
         path: 'flash-ideas',
         name: 'FlashIdeas',
         component: () => import('../views/about/FlashIdeas.vue')

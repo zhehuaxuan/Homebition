@@ -25,6 +25,9 @@
         </view>
         <text v-if="taskId" class="clear-task" @click="clearTask">取消关联</text>
       </view>
+      <view v-if="status === 'completed' && !taskId" class="form-group">
+        <text class="form-label">完成小结</text>
+        <textarea class="form-textarea" v-model="summary" placeholder="2-3句话总结完成情况..." :maxlength="500" auto-height />
       <button class="submit-btn" type="primary" @click="handleSave">保存</button>
     </view>
 
@@ -57,15 +60,15 @@ export default {
     return {
       id: null,
       content: '',
-      status: 'sapling',
+      status: 'pending',
       taskId: null,
       taskTitle: '',
+      summary: '',
       taskList: [],
       showTaskPicker: false,
       statusOptions: [
-        { value: 'sapling', label: '🌱 幼苗' },
-        { value: 'tree', label: '🌳 小树' },
-        { value: 'forest', label: '🌲 森林' }
+        { value: 'pending', label: '⏳ 进行中' },
+        { value: 'completed', label: '✅ 已完成' }
       ],
       statusMap: { 0: '待启动', 1: '进行中', 2: '已完成' }
     }
@@ -84,6 +87,7 @@ export default {
           if (item) {
             this.content = item.content
             this.status = item.status
+            this.summary = item.summary || ''
             this.taskId = item.task_id
             // Look up task title if tasks already loaded
             if (this.taskId && this.taskList.length) {
@@ -117,6 +121,7 @@ export default {
         if (this.taskId) data.task_id = this.taskId
         else data.task_id = null
         data.status = this.status
+        if (this.summary.trim()) data.summary = this.summary.trim()
 
         await request({
           url: '/api/flash-ideas/' + this.id,

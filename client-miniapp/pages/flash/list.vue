@@ -44,7 +44,7 @@ export default {
       }
     },
     statusLabel(s) {
-      const map = { sapling: '🌱 幼苗', tree: '🌳 小树', forest: '🌲 森林' }
+      const map = { pending: '⏳ 进行中', completed: '✅ 已完成' }
       return map[s] || s
     },
     formatDate(d) { return d ? d.slice(0, 16) : '' },
@@ -78,9 +78,8 @@ export default {
   margin-bottom: 12rpx;
 }
 .flash-status { font-size: 22rpx; padding: 2rpx 12rpx; border-radius: 12rpx; }
-.status-sapling { background: #fff7e6; color: #E6A23C; }
-.status-tree { background: #ecf5ff; color: #409EFF; }
-.status-forest { background: #f0f9eb; color: #67C23A; }
+.status-pending { background: #fff7e6; color: #E6A23C; }
+.status-completed { background: #f0f9eb; color: #67C23A; }
 .flash-time { font-size: 22rpx; color: #909399; }
 .flash-content {
   font-size: 28rpx;

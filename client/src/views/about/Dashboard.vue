@@ -197,7 +197,7 @@ const statGroups = computed(() => {
 
 const importanceStars = (imp) => ({ '极高': 4, '高': 3, '中': 2, '低': 1 }[imp] || 0)
 
-const statusLabels = { sapling: '🌱 小树苗', tree: '🌳 大树', forest: '🌲 森林' }
+const statusLabels = { pending: '⏳ 进行中', completed: '✅ 已完成' }
 
 const tagType = (v) => {
   if (!v) return 'info'
@@ -592,9 +592,8 @@ onMounted(fetchDashboard)
   border-radius: 50%;
   flex-shrink: 0;
 }
-.dot-sapling { background: #a78bfa; }
-.dot-tree    { background: #60a5fa; }
-.dot-forest  { background: #22c55e; }
+.dot-pending { background: #fbbf24; }
+.dot-completed { background: #22c55e; }
 
 .flash-text {
   flex: 1;

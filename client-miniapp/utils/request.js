@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:3000'
+const BASE_URL = 'http://47.103.67.107:3000'
 
 function request(options) {
   const token = uni.getStorageSync('jwt_token')
@@ -24,6 +24,7 @@ function request(options) {
         resolve(res.data)
       },
       fail(err) {
+        uni.showModal({ title: '请求失败', content: JSON.stringify(err) })
         reject(err)
       }
     })

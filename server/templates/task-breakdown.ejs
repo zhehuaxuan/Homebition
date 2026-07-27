@@ -22,6 +22,8 @@
     .schedule-row.work { background: #f0f4ff; border: 1px solid #dde4f0; }
     .schedule-row.break { background: #fafafa; border: 1px solid #eee; color: #999; }
     .schedule-row.buffer { background: #fff8e1; border: 1px solid #ffe082; color: #f57f17; }
+    .schedule-row.idea { background: #f3e5f5; border: 1px solid #ce93d8; }
+    .schedule-row.idea .schedule-time { color: #7b1fa2; }
     .schedule-time { font-weight: 600; color: #667eea; min-width: 100px; font-size: 12px; }
     .schedule-row.break .schedule-time { color: #999; }
     .schedule-row.buffer .schedule-time { color: #f57f17; }
@@ -96,6 +98,7 @@
             <div class="schedule-row <%= slot.type || 'work' %>">
               <span class="schedule-time"><%= slot.timeSlot %></span>
               <span class="schedule-task">
+                <% if (slot.type === 'idea') { %>💡 <% } %>
                 <%= slot.title %>
                 <% if (slot.note) { %>
                   <span class="schedule-note">— <%= slot.note %></span>
@@ -120,7 +123,9 @@
             <% group.tasks.forEach(function(task) { %>
               <div class="task-item">
                 <div class="task-row1">
-                  <span class="task-title"><%= task.title %></span>
+                  <span class="task-title">
+                    <% if (task.workflowId) { %><span style="font-size:11px;color:#7b1fa2;font-weight:400;">[工作流] </span><% } %>
+                    <%= task.title %></span>
                   <span class="task-badge <%= task.priority %>"><%= task.priority === 'urgent' ? '紧急' : (task.priority === 'high' ? '高' : (task.priority === 'medium' ? '中' : '低')) %></span>
                 </div>
                 <div class="task-meta">
@@ -182,6 +187,27 @@
             <% }); %>
           </tbody>
         </table>
+      <% } %>
+
+      <!-- Pending Ideas -->
+      <% if (data.pendingIdeas && data.pendingIdeas.length > 0) { %>
+        <div class="section-title">💡 待处理闪念建议</div>
+        <% data.pendingIdeas.forEach(function(idea) { %>
+          <div class="group" style="margin-bottom:8px;padding:10px 14px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <span style="font-size:14px;font-weight:600;color:#333;"><%= idea.content %></span>
+              <span class="task-badge <%= idea.priority %>">
+                <%= idea.priority === 'urgent' ? '紧急' : (idea.priority === 'high' ? '高' : (idea.priority === 'medium' ? '中' : (idea.priority === 'low' ? '低' : '暂缓'))) %>
+              </span>
+            </div>
+            <% if (idea.suggestion) { %>
+              <div style="font-size:13px;color:#555;line-height:1.5;padding:6px 8px;background:#f3e5f5;border-radius:4px;">
+                <span style="font-weight:600;font-size:11px;color:#7b1fa2;display:block;margin-bottom:2px;">✏️ 建议</span>
+                <%= idea.suggestion %>
+              </div>
+            <% } %>
+          </div>
+        <% }); %>
       <% } %>
     </div>
     <div class="footer">

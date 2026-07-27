@@ -257,6 +257,20 @@ function buildAllTasks(tasks) {
     });
 }
 
+/**
+ * Build fallback workflow task list (non-AI)
+ */
+function buildWorkflowFallback(workflowTasks) {
+    return workflowTasks.map(w => ({
+        workflowId: w.id,
+        title: w.title,
+        progress: w.total_steps > 0
+            ? Math.round((w.completed_steps / w.total_steps) * 100)
+            : 0,
+        stepInfo: `${w.completed_steps}/${w.total_steps}`
+    }));
+}
+
 function calcPriority(remainDays, importance) {
     if (remainDays < 0) return 'urgent';
     if (remainDays <= 3 || importance >= 5) return 'high';
@@ -409,6 +423,18 @@ async function generateTaskBreakdown(db) {
 
 ${formattedTasks}
 
+## 进行中的工作流任务
+
+共 ${workflowTasks.length} 个工作流：
+
+${formattedWorkflows}
+
+## 待处理的闪念想法
+
+共 ${flashIdeas.length} 条：
+
+${formattedIdeas}
+
 ## 输出要求
 
 请严格按以下 JSON 格式返回，不要添加任何解释或额外文本：
@@ -447,7 +473,16 @@ ${formattedTasks}
     { "timeSlot": "15:00-15:45", "taskId": 4, "title": "原任务名", "note": "具体说明" },
     { "timeSlot": "15:45-16:00", "type": "break", "title": "休息" },
     { "timeSlot": "16:00-16:45", "taskId": 5, "title": "原任务名", "note": "具体说明" },
-    { "timeSlot": "16:45-17:30", "type": "buffer", "title": "缓冲收尾" }
+    { "timeSlot": "16:45-17:30", "type": "buffer", "title": "缓冲收尾" },
+    { "timeSlot": "16:00-16:20", "type": "idea", "title": "处理闪念", "note": "该时段处理的具体想法" }
+  ],
+  "pendingIdeas": [
+    {
+      "ideaId": 1,
+      "content": "想法原始内容",
+      "suggestion": "安排在下午16:00快速处理",
+      "priority": "medium"
+    }
   ]
 }
 
@@ -458,7 +493,13 @@ ${formattedTasks}
 - 如果推荐任务少于5个，不足的 slot 用 type=break 补满
 - summary 字段应简要概括今天安排了哪几个任务、上午和下午分别做什么
 - title 字段使用原任务标题，不要改写
-- 充分参考任务的当前进度、剩余天数和重要性`;
+- 充分参考任务的当前进度、剩余天数和重要性
+
+⏱ **时间分配规则**：
+- 80% 的时间（约 5.5 小时）分配给普通任务和工作流任务的推进
+- 20% 的时间（约 1 小时）分配给待处理闪念的快速处理
+- 建议将闪念安排在下午的简短时间段，如 2-3 个 20 分钟的 slot
+- 工作流任务可以出现在 groups 中，使用 workflowId 字段代替 taskId`;
 
     try {
         logger.info(`[ai] 正在调用 DeepSeek API (${deepseekModel})...`);
@@ -482,6 +523,13 @@ ${formattedTasks}
             const result = JSON.parse(jsonMatch[0]);
             // Attach code-generated allTasks
             result.allTasks = buildAllTasks(tasks);
+            result.workflowTasks = buildWorkflowFallback(workflowTasks);
+            result.pendingIdeas = flashIdeas.map(f => ({
+                ideaId: f.id,
+                content: f.content,
+                suggestion: '',
+                priority: 'none'
+            }));
             logger.info('[ai] task-breakdown 生成成功');
             return result;
         }
@@ -496,7 +544,14 @@ ${formattedTasks}
             groups: [],
             suspendedAdvice: '',
             todaySchedule: [],
-            allTasks: buildAllTasks(tasks)
+            allTasks: buildAllTasks(tasks),
+            workflowTasks: buildWorkflowFallback(workflowTasks),
+            pendingIdeas: flashIdeas.map(f => ({
+                ideaId: f.id,
+                content: f.content,
+                suggestion: '',
+                priority: 'none'
+            }))
         };
     }
 }

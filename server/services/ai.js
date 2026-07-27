@@ -282,6 +282,14 @@ function formatWorkflowForPrompt(w) {
 }
 
 /**
+ * Format a single flash idea for the prompt
+ */
+function formatFlashIdeaForPrompt(f, index) {
+    const date = f.created_at ? String(f.created_at).slice(0, 10) : '';
+    return `${index + 1}. ${f.content}（${date}）`;
+}
+
+/**
  * Format a single task for the prompt
  */
 function formatTaskForPrompt(t) {
@@ -377,6 +385,19 @@ async function generateTaskBreakdown(db) {
     const formattedWorkflows = workflowTasks.length
         ? workflowTasks.map(formatWorkflowForPrompt).join('\n\n')
         : '当前没有进行中的工作流任务。';
+
+    // Query pending flash ideas not linked to a task
+    const [flashIdeas] = await db.query(
+        `SELECT id, content, created_at
+         FROM flash_ideas
+         WHERE status = 'pending' AND task_id IS NULL
+         ORDER BY created_at DESC`
+    );
+
+    // Format flash ideas for prompt
+    const formattedIdeas = flashIdeas.length
+        ? flashIdeas.map(formatFlashIdeaForPrompt).join('\n')
+        : '当前没有待处理的闪念。';
 
     const prompt = `你是一个任务管理助手。请分析以下任务列表，生成今日重点工作安排。
 

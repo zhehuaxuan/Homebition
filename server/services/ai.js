@@ -267,6 +267,21 @@ function calcPriority(remainDays, importance) {
 const STATUS_TEXT = { 0: '待启动', 1: '进行中', 3: '挂起中' };
 
 /**
+ * Format a single workflow task for the prompt
+ */
+function formatWorkflowForPrompt(w) {
+    const stepInfo = `${w.completed_steps}/${w.total_steps} 步骤已完成`;
+    const stepChain = w.step_names || '未配置步骤';
+    const currentStep = w.current_step_name || '无';
+    return `### 工作流ID: ${w.id}
+- 标题：${w.title}
+- 描述：${w.description || '无'}
+- 进度：${stepInfo}
+- 步骤链路：${stepChain}
+- 当前正在：${currentStep}`;
+}
+
+/**
  * Format a single task for the prompt
  */
 function formatTaskForPrompt(t) {
@@ -340,6 +355,28 @@ async function generateTaskBreakdown(db) {
 
     // Format tasks for prompt
     const formattedTasks = tasks.map(formatTaskForPrompt).join('\n\n');
+
+    // Query in-progress workflow tasks with step details
+    const [workflowTasks] = await db.query(
+        `SELECT
+          wt.id, wt.title, wt.description,
+          wt.total_steps, wt.current_step_order,
+          COUNT(ws.id) AS total_step_count,
+          SUM(CASE WHEN ws.status = 2 THEN 1 ELSE 0 END) AS completed_steps,
+          GROUP_CONCAT(ws.name ORDER BY ws.step_order SEPARATOR ' → ') AS step_names,
+          ws2.name AS current_step_name
+         FROM workflow_task wt
+         LEFT JOIN workflow_step ws ON ws.task_id = wt.id
+         LEFT JOIN workflow_step ws2 ON ws2.task_id = wt.id AND ws2.status = 1
+         WHERE wt.status = 1
+         GROUP BY wt.id
+         ORDER BY wt.created_at DESC`
+    );
+
+    // Format workflow tasks for prompt
+    const formattedWorkflows = workflowTasks.length
+        ? workflowTasks.map(formatWorkflowForPrompt).join('\n\n')
+        : '当前没有进行中的工作流任务。';
 
     const prompt = `你是一个任务管理助手。请分析以下任务列表，生成今日重点工作安排。
 

@@ -144,12 +144,9 @@
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进展记录</div>
         <div v-if="progressList.length">
-          <div v-for="(item, idx) in progressList" :key="idx" style="display:flex; align-items:flex-start; justify-content:space-between; padding:8px 0; border-bottom:1px solid #eee;">
-            <div style="flex:1;">
-              <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">{{ item.create_time }}</div>
-              <div style="font-size:13px; color:#475569; line-height:1.4;">{{ item.content }}</div>
-            </div>
-            <el-button type="danger" size="small" text @click="handleDeleteProgress(item.id)" style="flex-shrink:0; margin-left:8px;">✕</el-button>
+          <div v-for="(item, idx) in progressList" :key="idx" style="padding:8px 0; border-bottom:1px solid #eee;">
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:4px;">{{ item.create_time }}</div>
+            <div style="font-size:13px; color:#475569; line-height:1.4;">{{ item.content }}</div>
           </div>
         </div>
         <div v-else style="color:#999; padding:10px 0;">暂无进展记录</div>
@@ -158,14 +155,9 @@
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进度</div>
         <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 60 ? '#409eff' : p >= 30 ? '#e6a23c' : '#f56c6c'" />
       </div>
-      <div style="margin-top:15px;">
-        <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">添加进展反馈</div>
-        <el-input v-model="feedbackContent" type="textarea" rows="3" placeholder="请输入任务进展反馈..." maxlength="500" show-word-limit />
-      </div>
     </div>
     <template #footer>
       <el-button @click="detailVisible = false">关闭</el-button>
-      <el-button type="primary" @click="subProgress">提交进展</el-button>
     </template>
   </el-dialog>
 </template>
@@ -182,12 +174,10 @@ const viewMode = ref('month')
 const detailVisible = ref(false)
 const detailData = ref(null)
 const progressList = ref([])
-const feedbackContent = ref('')
 
 function openTaskDetail(task) {
   if (!task) return
   detailData.value = { ...task }
-  feedbackContent.value = ''
   loadProgressList(task.id)
   detailVisible.value = true
 }

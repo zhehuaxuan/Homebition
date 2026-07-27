@@ -164,7 +164,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import axios from 'axios'
 
 const taskList = ref([])
@@ -199,30 +198,6 @@ function fmtDT(time) {
   if (!time) return ''
   const d = new Date(time)
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')
-}
-
-async function subProgress() {
-  if (!feedbackContent.value.trim()) return ElMessage.warning('请输入进展内容')
-  const progress = detailData.value.progress || 0
-  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value, progress })
-  ElMessage.success('提交成功')
-  feedbackContent.value = ''
-  // 同步列表中的进度
-  const task = taskList.value.find(t => t.id === detailData.value.id)
-  if (task) task.progress = progress
-  detailData.value.progress = progress
-  loadProgressList(detailData.value.id)
-}
-
-async function handleDeleteProgress(progressId) {
-  try {
-    await ElMessageBox.confirm('确定删除该进展记录？', '提示', { type: 'warning' })
-  } catch {
-    return
-  }
-  await axios.delete('/api/task/progress/delete/' + progressId)
-  ElMessage.success('删除成功')
-  loadProgressList(detailData.value.id)
 }
 
 const year = computed(() => viewDate.value.getFullYear())

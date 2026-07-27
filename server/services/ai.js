@@ -383,7 +383,6 @@ async function generateTaskBreakdown(db) {
         `SELECT
           wt.id, wt.title, wt.description,
           wt.total_steps, wt.current_step_order,
-          COUNT(ws.id) AS total_step_count,
           SUM(CASE WHEN ws.status = 2 THEN 1 ELSE 0 END) AS completed_steps,
           GROUP_CONCAT(ws.name ORDER BY ws.step_order SEPARATOR ' → ') AS step_names,
           ws2.name AS current_step_name
@@ -458,6 +457,16 @@ ${formattedIdeas}
           "estimatedMinutes": 120,
           "reason": "为什么今天优先做这个（结合剩余天数和重要性）",
           "suggestion": "具体执行建议（如先做哪个子任务、卡点如何解决）"
+        },
+        {
+          "workflowId": 1,
+          "title": "使用原工作流标题",
+          "currentStatus": "进行中",
+          "progress": 60,
+          "priority": "high",
+          "estimatedMinutes": 90,
+          "reason": "为什么今天优先推进这个工作流",
+          "suggestion": "具体执行建议"
         }
       ]
     }
@@ -474,7 +483,7 @@ ${formattedIdeas}
     { "timeSlot": "15:45-16:00", "type": "break", "title": "休息" },
     { "timeSlot": "16:00-16:45", "taskId": 5, "title": "原任务名", "note": "具体说明" },
     { "timeSlot": "16:45-17:30", "type": "buffer", "title": "缓冲收尾" },
-    { "timeSlot": "16:00-16:20", "type": "idea", "title": "处理闪念", "note": "该时段处理的具体想法" }
+    { "timeSlot": "17:30-17:50", "type": "idea", "title": "处理闪念", "note": "该时段处理的具体想法" }
   ],
   "pendingIdeas": [
     {

@@ -156,8 +156,7 @@
       </div>
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">任务进度</div>
-        <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 60 ? '#409eff' : p >= 30 ? '#e6a23c' : '#f56c6c'" style="margin-bottom:8px;" />
-        <el-slider v-model="feedbackProgress" :min="0" :max="100" show-input :step="5" />
+        <el-progress :percentage="detailData.progress || 0" :stroke-width="8" :color="(p) => p >= 100 ? '#67c23a' : p >= 60 ? '#409eff' : p >= 30 ? '#e6a23c' : '#f56c6c'" />
       </div>
       <div style="margin-top:15px;">
         <div style="font-weight:bold; margin-bottom:8px; color:#1e293b;">添加进展反馈</div>
@@ -184,13 +183,11 @@ const detailVisible = ref(false)
 const detailData = ref(null)
 const progressList = ref([])
 const feedbackContent = ref('')
-const feedbackProgress = ref(0)
 
 function openTaskDetail(task) {
   if (!task) return
   detailData.value = { ...task }
   feedbackContent.value = ''
-  feedbackProgress.value = task.progress || 0
   loadProgressList(task.id)
   detailVisible.value = true
 }
@@ -216,13 +213,14 @@ function fmtDT(time) {
 
 async function subProgress() {
   if (!feedbackContent.value.trim()) return ElMessage.warning('请输入进展内容')
-  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value, progress: feedbackProgress.value })
+  const progress = detailData.value.progress || 0
+  await axios.post('/api/task/progress/add', { taskId: detailData.value.id, content: feedbackContent.value, progress })
   ElMessage.success('提交成功')
   feedbackContent.value = ''
   // 同步列表中的进度
   const task = taskList.value.find(t => t.id === detailData.value.id)
-  if (task) task.progress = feedbackProgress.value
-  detailData.value.progress = feedbackProgress.value
+  if (task) task.progress = progress
+  detailData.value.progress = progress
   loadProgressList(detailData.value.id)
 }
 

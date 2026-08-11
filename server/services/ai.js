@@ -385,10 +385,9 @@ async function generateTaskBreakdown(db) {
           wt.total_steps, wt.current_step_order,
           SUM(CASE WHEN ws.status = 2 THEN 1 ELSE 0 END) AS completed_steps,
           GROUP_CONCAT(ws.name ORDER BY ws.step_order SEPARATOR ' → ') AS step_names,
-          ws2.name AS current_step_name
+          (SELECT ws3.name FROM workflow_step ws3 WHERE ws3.task_id = wt.id AND ws3.status = 1 LIMIT 1) AS current_step_name
          FROM workflow_task wt
          LEFT JOIN workflow_step ws ON ws.task_id = wt.id
-         LEFT JOIN workflow_step ws2 ON ws2.task_id = wt.id AND ws2.status = 1
          WHERE wt.status = 1
          GROUP BY wt.id
          ORDER BY wt.created_at DESC`

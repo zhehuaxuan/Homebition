@@ -165,15 +165,14 @@ const greetingText = computed(() => {
 
 const statGroups = computed(() => {
   const s = data.value.stats || {}
-  const unfinished = !s.hasTodaySummary || !s.hasTodayReview
   return [
     {
       key: 'daily',
       label: '日常工作',
       cards: [
         { key: 'flash',    icon: '💡', label: '闪念',      value: (s.flashIdeasCount || 0) + '', color: '#a855f7', link: '/about/flash-ideas' },
-        { key: 'tasks',    icon: '📋', label: '临期任务',  value: (s.pendingTasks || 0) + (s.inProgressTasks || 0) + '', color: '#409eff', link: '/about/task-list', badge: unfinished ? (s.hasTodaySummary ? '复盘' : '日报') : null, badgeType: 'warning' },
-        { key: 'summary',  icon: '📊', label: '日报状态',  value: s.hasTodaySummary ? '已写' : '未写', color: s.hasTodaySummary ? '#06b6d4' : '#f59e0b', warn: !s.hasTodaySummary, link: '/about/daily-summary' },
+        { key: 'tasks',    icon: '📋', label: '临期任务',  value: (s.pendingTasks || 0) + (s.inProgressTasks || 0) + '', color: '#409eff', link: '/about/task-list' },
+        { key: 'summary',  icon: '📊', label: '日报状态',  value: !isWorkingDay ? '不用做' : (s.hasTodaySummary ? '已写' : '未写'), color: !isWorkingDay ? '#64748b' : (s.hasTodaySummary ? '#06b6d4' : '#f59e0b'), warn: isWorkingDay && !s.hasTodaySummary, link: '/about/daily-summary' },
       ]
     },
     {
@@ -181,7 +180,7 @@ const statGroups = computed(() => {
       label: '投研跟踪',
       cards: [
         { key: 'research', icon: '🔬', label: '研究跟踪',  value: (s.researchCount || 0) + '', color: '#f59e0b', link: '/about/research' },
-        { key: 'review',   icon: '📈', label: '今日复盘',  value: s.hasTodayReview ? '已复盘' : '未复盘', color: s.hasTodayReview ? '#22c55e' : '#f59e0b', warn: !s.hasTodayReview, link: '/about/daily-review' },
+        { key: 'review',   icon: '📈', label: '今日复盘',  value: !isWorkingDay ? '不用做' : (s.hasTodayReview ? '已复盘' : '未复盘'), color: !isWorkingDay ? '#64748b' : (s.hasTodayReview ? '#22c55e' : '#f59e0b'), warn: isWorkingDay && !s.hasTodayReview, link: '/about/daily-review' },
       ]
     },
     {
@@ -198,6 +197,12 @@ const statGroups = computed(() => {
 const importanceStars = (imp) => ({ '极高': 4, '高': 3, '中': 2, '低': 1 }[imp] || 0)
 
 const statusLabels = { pending: '⏳ 进行中', completed: '✅ 已完成' }
+
+const isWorkingDay = (() => {
+  const d = new Date()
+  const day = d.getDay()
+  return day >= 1 && day <= 5
+})()
 
 const tagType = (v) => {
   if (!v) return 'info'

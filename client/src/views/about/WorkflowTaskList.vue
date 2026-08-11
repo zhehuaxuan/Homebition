@@ -47,7 +47,7 @@
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="scope">
             <div class="action-btns">
-              <el-button v-if="scope.row.status === 0" size="small" @click="$router.push(`/about/workflow-tasks/${scope.row.id}/edit`)">编辑</el-button>
+              <el-button v-if="scope.row.status === 0 || scope.row.status === 1" size="small" @click="$router.push(`/about/workflow-tasks/${scope.row.id}/edit`)">编辑</el-button>
               <el-button v-if="scope.row.status === 2" size="small" @click="$router.push(`/about/workflow-tasks/${scope.row.id}`)">查看</el-button>
               <el-button v-if="scope.row.status === 0" size="small" @click="handleStart(scope.row.id)">启动</el-button>
               <el-button v-if="scope.row.status === 1" size="small" type="success" @click="$router.push(`/about/workflow-tasks/${scope.row.id}/progress`)">反馈进展</el-button>
@@ -75,7 +75,7 @@
           <span>创建：{{ formatDate(task.created_at) }}</span>
         </div>
         <div class="card-actions">
-          <el-button v-if="task.status === 0" size="small" @click="$router.push(`/about/workflow-tasks/${task.id}/edit`)">编辑</el-button>
+          <el-button v-if="task.status === 0 || task.status === 1" size="small" @click="$router.push(`/about/workflow-tasks/${task.id}/edit`)">编辑</el-button>
           <el-button v-if="task.status === 2" size="small" @click="$router.push(`/about/workflow-tasks/${task.id}`)">查看</el-button>
           <el-button v-if="task.status === 0" size="small" @click="handleStart(task.id)">启动</el-button>
           <el-button v-if="task.status === 1" size="small" type="success" @click="$router.push(`/about/workflow-tasks/${task.id}/progress`)">进展</el-button>

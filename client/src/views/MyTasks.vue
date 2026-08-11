@@ -391,7 +391,6 @@ const computeStats = computed(() => {
     item.close_time = dateFormatter(item.close_time)
     return item
   })
-  const now = Date.now()
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
   const d = new Date()
@@ -401,9 +400,8 @@ const computeStats = computed(() => {
   totalWait.value = list.filter(i => i.statusText === '待启动').length
   totalDone.value = list.filter(i => i.statusText === '已完成').length
   totalOverdue.value = list.filter(i => {
-    const isNotDone = i.statusText !== '已完成'
-    const isOver = new Date(i.close_time).getTime() < now
-    return isNotDone && isOver
+    if (i.statusText === '已完成' || !i.close_time) return false
+    return i.close_time < today.value
   }).length
   const monthList = list.filter(i => {
     const createDate = new Date(i.create_time)

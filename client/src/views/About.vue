@@ -13,15 +13,22 @@
         </button>
       </div>
       <div class="mobile-tab-bar">
-        <router-link
-          v-for="tab in filteredTabs"
-          :key="tab.to"
-          :to="tab.to"
-          class="mobile-tab-item"
-        >
-          <span class="mobile-tab-icon">{{ tab.icon }}</span>
-          <span class="mobile-tab-text">{{ tabLabels[tab.to] }}</span>
-        </router-link>
+        <template v-for="tab in filteredTabs" :key="tab.to">
+          <router-link v-if="!tab.external" :to="tab.to" class="mobile-tab-item">
+            <span class="mobile-tab-icon">{{ tab.icon }}</span>
+            <span class="mobile-tab-text">{{ tabLabels[tab.to] }}</span>
+          </router-link>
+          <a
+            v-else
+            :href="`${origin}${tab.to}`"
+            target="_blank"
+            rel="noopener"
+            class="mobile-tab-item"
+          >
+            <span class="mobile-tab-icon">{{ tab.icon }}</span>
+            <span class="mobile-tab-text">{{ tabLabels[tab.to] }}</span>
+          </a>
+        </template>
       </div>
     </div>
     <!-- 左侧导航栏 -->
@@ -30,12 +37,24 @@
       <div v-for="group in menuGroups" :key="group.key" class="sidebar-group">
         <div class="group-title">{{ group.label }}</div>
         <ul class="sidebar-menu">
-          <li v-for="item in group.children" :key="item.to">
-            <router-link :to="item.to" class="menu-item">
-              <span class="icon">{{ item.icon }}</span>
-              <span class="text">{{ item.label }}</span>
-            </router-link>
-          </li>
+          <template v-for="item in group.children" :key="item.to">
+            <li>
+              <router-link v-if="!item.external" :to="item.to" class="menu-item">
+                <span class="icon">{{ item.icon }}</span>
+                <span class="text">{{ item.label }}</span>
+              </router-link>
+              <a
+                v-else
+                :href="`${origin}${item.to}`"
+                target="_blank"
+                rel="noopener"
+                class="menu-item"
+              >
+                <span class="icon">{{ item.icon }}</span>
+                <span class="text">{{ item.label }}</span>
+              </a>
+            </li>
+          </template>
         </ul>
       </div>
     </div>
@@ -51,6 +70,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+
+// 外部链接同源前缀（考试管理等新窗口打开）
+const origin = window.location.origin
 
 // 分组定义
 const groups = [
@@ -96,6 +118,7 @@ const menuGroups = [
     children: [
       { to: '/about/article-list', label: '文章清单', icon: '📄' },
       { to: '/about/tag-list', label: '标签管理', icon: '🏷' },
+      { to: '/exam/', label: '考试管理', icon: '📝', external: true },
     ],
   },
   {
@@ -132,6 +155,7 @@ const tabLabels = {
   '/about/daily-review': '复盘',
   '/about/review-config': '配置',
   '/about/research': '研究',
+  '/exam/': '考试',
 }
 </script>
 

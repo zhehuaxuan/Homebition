@@ -11,6 +11,16 @@
         <span v-if="detail.companyCode" class="company-code">{{ detail.companyCode }}</span>
       </div>
       <div class="header-right">
+        <div class="status-switch">
+          <span class="status-label">状态：</span>
+          <el-switch
+            v-model="isHolding"
+            active-text="持仓中"
+            inactive-text="观察中"
+            inline-prompt
+            @change="handleStatusChange"
+          />
+        </div>
         <el-select v-model="selectedVersion" size="small" style="width: 110px" @change="switchVersion">
           <el-option
             v-for="v in detail.versions"
@@ -26,6 +36,27 @@
           <el-icon><Delete /></el-icon>
         </el-button>
       </div>
+    </div>
+
+    <!-- 标签 -->
+    <div class="tag-bar">
+      <span class="tag-bar-label">标签：</span>
+      <el-select
+        v-model="editTagIds"
+        multiple
+        size="small"
+        placeholder="添加标签"
+        collapse-tags
+        style="min-width: 200px"
+        @change="saveTags"
+      >
+        <el-option
+          v-for="t in tagList"
+          :key="t.id"
+          :label="t.name"
+          :value="t.id"
+        />
+      </el-select>
     </div>
 
     <!-- 版本信息 -->
@@ -342,6 +373,33 @@
           <Editor v-model="editNotes" :default-config="editorConfig" mode="default" @onCreated="onNotesCreated" class="wangeditor-box" />
         </div>
       </div>
+
+      <!-- FAQ -->
+      <div class="faq-section">
+        <h3>六、FAQ</h3>
+        <div v-if="!editing">
+          <div v-if="content.faq && content.faq.length" class="faq-list">
+            <div v-for="(item, idx) in content.faq" :key="'faq-' + idx" class="faq-item">
+              <p class="faq-q"><span class="faq-index">Q{{ idx + 1 }}</span>{{ item.question }}</p>
+              <p class="faq-a">{{ item.answer }}</p>
+            </div>
+          </div>
+          <p v-else class="empty-hint">暂无</p>
+        </div>
+        <div v-else>
+          <div v-if="editFaq.length" class="faq-list">
+            <div v-for="(item, idx) in editFaq" :key="'edit-faq-' + idx" class="faq-editor-item">
+              <div class="faq-editor-head">
+                <span class="faq-index">Q{{ idx + 1 }}</span>
+                <el-button text size="small" @click="removeFaq(idx)">删除</el-button>
+              </div>
+              <el-input v-model="item.question" placeholder="问题" />
+              <el-input v-model="item.answer" type="textarea" :rows="2" placeholder="回答" style="margin-top: 8px" />
+            </div>
+          </div>
+          <el-button size="small" @click="addFaq">+ 添加问答</el-button>
+        </div>
+      </div>
     </template>
 
     <!-- 提交变更对话框 -->
@@ -390,10 +448,13 @@ const researchBase = computed(() =>
 // 页面状态
 const loading = ref(false)
 const editing = ref(false)
+const isHolding = ref(false)
 const detail = ref({ companyName: '', companyCode: '', versions: [], content: {} })
 const content = ref({})
 const selectedVersion = ref('')
 const currentVersionMeta = ref(null)
+const tagList = ref([])
+const editTagIds = ref([])
 
 // 编辑态数据
 const editPros = ref([])
@@ -405,6 +466,7 @@ const editTargetPrice = ref(null)
 const editSweetSpot = ref('')
 const editIndustryItems = ref([])
 const editCompanyItems = ref([])
+const editFaq = ref([])
 const showProInput = ref(false)
 const showConInput = ref(false)
 const proInputValue = ref('')
@@ -479,6 +541,8 @@ const fetchDetail = async () => {
     const res = await axios.get(`/api/invest/research/${researchId.value}`)
     if (res.data.code === 0) {
       detail.value = res.data.data
+      isHolding.value = res.data.data.status === '持仓中'
+      editTagIds.value = res.data.data.tags || []
       selectedVersion.value = detail.value.currentVersion
       updateContent(detail.value.content)
       if (detail.value.versions.length) {
@@ -504,6 +568,7 @@ const updateContent = (data) => {
   editSweetSpot.value = data.sweetSpot || ''
   editIndustryItems.value = data.industryItems ? JSON.parse(JSON.stringify(data.industryItems)) : []
   editCompanyItems.value = data.companyItems ? JSON.parse(JSON.stringify(data.companyItems)) : []
+  editFaq.value = data.faq ? JSON.parse(JSON.stringify(data.faq)) : []
 }
 
 // 版本切换
@@ -522,6 +587,45 @@ const switchVersion = async (ver) => {
     ElMessage.error('获取版本失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 切换状态（观察中/持仓中）
+const handleStatusChange = async (val) => {
+  const status = val ? '持仓中' : '观察中'
+  try {
+    const res = await axios.post(`/api/invest/research/${researchId.value}/status`, { status })
+    if (res.data.code === 0) {
+      detail.value.status = status
+      ElMessage.success(`已切换为「${status}」`)
+    }
+  } catch (err) {
+    isHolding.value = !val
+    ElMessage.error('状态更新失败')
+  }
+}
+
+// 保存标签（即时保存，标签属于公司级，与版本无关）
+const saveTags = async (val) => {
+  try {
+    const res = await axios.post(`/api/invest/research/${researchId.value}/tags`, { tagIds: val })
+    if (res.data.code === 0) {
+      detail.value.tags = val
+      ElMessage.success('标签已更新')
+    }
+  } catch (err) {
+    editTagIds.value = detail.value.tags || []
+    ElMessage.error('标签更新失败')
+  }
+}
+
+// 加载标签
+const fetchTagList = async () => {
+  try {
+    const { data } = await axios.get('/api/tags')
+    if (data.code === 0) tagList.value = data.data || []
+  } catch (err) {
+    tagList.value = []
   }
 }
 
@@ -556,6 +660,7 @@ const startEdit = () => {
   editSweetSpot.value = content.value.sweetSpot || ''
   editIndustryItems.value = content.value.industryItems ? JSON.parse(JSON.stringify(content.value.industryItems)) : []
   editCompanyItems.value = content.value.companyItems ? JSON.parse(JSON.stringify(content.value.companyItems)) : []
+  editFaq.value = content.value.faq ? JSON.parse(JSON.stringify(content.value.faq)) : []
 }
 
 const cancelEdit = () => {
@@ -569,6 +674,7 @@ const cancelEdit = () => {
   editSweetSpot.value = content.value.sweetSpot || ''
   editIndustryItems.value = content.value.industryItems ? JSON.parse(JSON.stringify(content.value.industryItems)) : []
   editCompanyItems.value = content.value.companyItems ? JSON.parse(JSON.stringify(content.value.companyItems)) : []
+  editFaq.value = content.value.faq ? JSON.parse(JSON.stringify(content.value.faq)) : []
 }
 
 const addPro = () => {
@@ -589,6 +695,9 @@ const addCon = () => {
 
 const removeCon = (idx) => { editCons.value.splice(idx, 1) }
 
+const addFaq = () => { editFaq.value.push({ question: '', answer: '' }) }
+const removeFaq = (idx) => { editFaq.value.splice(idx, 1) }
+
 // 提交版本
 const submitVersion = async () => {
   if (!submitForm.versionDesc.trim()) return
@@ -607,7 +716,8 @@ const submitVersion = async () => {
       industryScore: computedIndustryScore.value,
       companyScore: computedCompanyScore.value,
       targetPrice: editTargetPrice.value,
-      sweetSpot: editSweetSpot.value
+      sweetSpot: editSweetSpot.value,
+      faq: editFaq.value
     })
     if (res.data.code === 0) {
       ElMessage.success(`已生成新版本 ${res.data.data.version}`)
@@ -629,7 +739,10 @@ const onNotesCreated = (editor) => {
   notesEditor.value = editor
 }
 
-onMounted(fetchDetail)
+onMounted(() => {
+  fetchDetail()
+  fetchTagList()
+})
 
 onUnmounted(() => {
   if (notesEditor.value) notesEditor.value.destroy()
@@ -676,6 +789,22 @@ onUnmounted(() => {
   gap: 8px;
 }
 
+.status-switch {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px 4px 8px;
+  background: rgba(64, 158, 255, 0.06);
+  border: 1px solid #334155;
+  border-radius: 20px;
+  font-size: 13px;
+}
+
+.status-label {
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
 .delete-btn {
   color: #64748b;
 }
@@ -700,6 +829,23 @@ onUnmounted(() => {
 
 .meta-item .el-icon {
   font-size: 13px;
+}
+
+.tag-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: rgba(64, 158, 255, 0.06);
+  border: 1px solid #334155;
+  border-radius: 8px;
+}
+
+.tag-bar-label {
+  font-size: 13px;
+  color: #94a3b8;
+  white-space: nowrap;
 }
 
 .loading-box {
@@ -842,11 +988,11 @@ onUnmounted(() => {
 }
 
 /* 综合评价 */
-.summary-section, .strategy-section, .notes-section, .price-section {
+.summary-section, .strategy-section, .notes-section, .price-section, .faq-section {
   margin-bottom: 24px;
 }
 
-.summary-section h3, .strategy-section h3, .notes-section h3, .price-section h3 {
+.summary-section h3, .strategy-section h3, .notes-section h3, .price-section h3, .faq-section h3 {
   margin: 0 0 12px 0;
   font-size: 16px;
   color: #e2e8f0;
@@ -882,6 +1028,80 @@ onUnmounted(() => {
   padding: 16px;
   background: rgba(64, 158, 255, 0.05);
   border-radius: 8px;
+}
+
+/* FAQ */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.faq-item {
+  background: rgba(64, 158, 255, 0.06);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.faq-q {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.faq-a {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #cbd5e1;
+}
+
+.faq-index {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 8px;
+  background: #409eff;
+  color: #fff;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  vertical-align: middle;
+}
+
+.faq-editor-item {
+  background: rgba(64, 158, 255, 0.04);
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.faq-editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.faq-editor-head .faq-index {
+  vertical-align: middle;
+}
+
+.faq-section {
+  :deep(.el-input__wrapper) {
+    background: #0f172a;
+    box-shadow: 0 0 0 1px #334155 inset;
+  }
+  :deep(.el-input__inner) {
+    color: #cbd5e1;
+  }
+  :deep(.el-textarea__inner) {
+    background: #0f172a;
+    border-color: #334155;
+    color: #cbd5e1;
+  }
 }
 
 .wangeditor-box {
@@ -1073,6 +1293,16 @@ onUnmounted(() => {
     gap: 8px;
     flex-direction: column;
     margin-bottom: 12px;
+  }
+
+  .tag-bar {
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .tag-bar :deep(.el-select) {
+    flex: 1;
+    min-width: 160px;
   }
 
   .wangeditor-box :deep(.w-e-text-container) {

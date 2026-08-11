@@ -17,6 +17,14 @@ const toDateStr = (d) => {
 };
 
 /**
+ * 判断指定日期是否为工作日（周一至周五）
+ */
+const isWorkingDay = (date) => {
+    const day = date.getDay();
+    return day >= 1 && day <= 5;
+};
+
+/**
  * 工具：将 Date 或任意值转为 YYYY-MM-DD HH:mm:ss 字符串（使用本地时间）
  */
 const toDateTimeStr = (d) => {
@@ -66,6 +74,7 @@ router.get('/dashboard', async (req, res) => {
         // 3. 今日复盘检查 + 最新复盘
         const now = new Date();
         const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+        const todayIsWorkingDay = isWorkingDay(now);
         const [todayReview] = await db.query(
             'SELECT id FROM investment_review WHERE review_date = ? LIMIT 1',
             [today]
@@ -201,10 +210,10 @@ router.get('/dashboard', async (req, res) => {
         if (totalPending > 0) {
             tips.push('还有 ' + totalPending + ' 个任务待推进');
         }
-        if (!todayReview.length) {
+        if (todayIsWorkingDay && !todayReview.length) {
             tips.push('今日尚未复盘');
         }
-        if (!todaySummary.length) {
+        if (todayIsWorkingDay && !todaySummary.length) {
             tips.push('今日日报还未提交');
         }
         if (taskStats.done > 0) {
@@ -228,6 +237,7 @@ router.get('/dashboard', async (req, res) => {
             code: 0,
             data: {
                 stats: {
+                    isWorkingDay: todayIsWorkingDay,
                     pendingTasks: taskStats.pending,
                     inProgressTasks: taskStats.inProgress,
                     doneTasks: taskStats.done,

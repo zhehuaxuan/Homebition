@@ -139,21 +139,101 @@
       </div>
     </div>
     <!-- 任务统计栏 -->
-    <div class="stats-bar" style="margin-top: 16px; font-size: 14px;">
-      截止{{ today }}，当前共计任务数{{ totalAll }}个，总预估工作量{{ totalWorkload }}人天，
-      其中
-      <el-tag type="primary">进行中</el-tag>：{{ totalDoing }}个，
-      <el-tag type="info">待启动</el-tag>：{{ totalWait }}个，
-      <el-tag type="success">已完成</el-tag>：{{ totalDone }}个，
-      平均进度 {{ avgProgress }}%；
-      当前已超期任务：<span style="color:red; font-weight:bold;">{{ totalOverdue }}</span>个；
-
-      本月共计任务数{{ totalMonth }}个，
-      其中
-      <el-tag type="primary">进行中</el-tag>：{{ monthDoing }}个，
-      <el-tag type="info">待启动</el-tag>：{{ monthWait }}个，
-      <el-tag type="success">已完成</el-tag>：{{ monthDone }}个，
-      月完成率 {{ monthDoneRate }}%。
+    <div class="stats-bar">
+      <div class="stats-section">
+        <div class="stats-title">全局统计（当年 · 截止 {{ today }}）</div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">总任务数</span>
+            <span class="stat-value">{{ totalAll }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">总工作量</span>
+            <span class="stat-value">{{ totalWorkload }} <span class="stat-unit">人天</span></span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">进行中</span>
+            <span class="stat-value stat-doing">{{ totalDoing }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">待启动</span>
+            <span class="stat-value stat-wait">{{ totalWait }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">已完成</span>
+            <span class="stat-value stat-done">{{ totalDone }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">平均进度</span>
+            <span class="stat-value">{{ avgProgress }}%</span>
+          </div>
+          <div v-if="totalOverdue > 0" class="stat-item stat-item-overdue">
+            <span class="stat-label">已超期</span>
+            <span class="stat-value stat-overdue">{{ totalOverdue }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats-section">
+        <div class="stats-title">本月统计（{{ monthLabel }}）</div>
+        <!-- 任务概况 -->
+        <div class="stats-group">
+          <div class="stats-subtitle">任务概况</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">任务数</span>
+              <span class="stat-value">{{ totalMonth }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">进行中</span>
+              <span class="stat-value stat-doing">{{ monthDoing }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">待启动</span>
+              <span class="stat-value stat-wait">{{ monthWait }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">已完成</span>
+              <span class="stat-value stat-done">{{ monthDone }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">完成率</span>
+              <span class="stat-value">{{ monthDoneRate }}%</span>
+            </div>
+          </div>
+        </div>
+        <!-- 工作量（人天） -->
+        <div class="stats-group">
+          <div class="stats-subtitle">工作量（人天）</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">总工作量</span>
+              <span class="stat-value">{{ monthWorkload }} <span class="stat-unit">人天</span></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">已完成工作量</span>
+              <span class="stat-value stat-done">{{ monthDoneWorkload }} <span class="stat-unit">人天</span></span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">待完成工作量</span>
+              <span class="stat-value stat-wait">{{ monthPendingWorkload }} <span class="stat-unit">人天</span></span>
+            </div>
+          </div>
+        </div>
+        <!-- 效率评估 -->
+        <div class="stats-group">
+          <div class="stats-subtitle">效率评估</div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">饱和度</span>
+              <span class="stat-value" :class="saturation > 100 ? 'stat-overdue' : ''">{{ saturation }}%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">人效比</span>
+              <span class="stat-value">{{ efficiency }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -178,7 +258,7 @@
           <el-tag v-for="t in detailData.tagsShow" :key="t" size="small" class="custom-tag">{{ t }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="任务目标" :span="2">
-          <div style="white-space:pre-wrap; min-height:40px;">{{ detailData.target || '无' }}</div>
+          <div style="white-space:pre-wrap; word-break:break-all; min-height:40px;">{{ detailData.target || '无' }}</div>
         </el-descriptions-item>
       </el-descriptions>
 
@@ -680,10 +760,34 @@ const monthDoing = ref(0)
 const monthWait = ref(0)
 const monthDone = ref(0)
 
+// 本月工作量统计（人天）
+const monthWorkload = ref(0)
+const monthDoneWorkload = ref(0)
+const monthPendingWorkload = ref(0)
+
+// 个人月工作量容量（人天），用于评估饱和度/人效比
+const MONTH_CAPACITY = 23
+const saturation = ref(0)
+const efficiency = ref(0)
+
+// 当前月份标签（如 2026-07），用于本月统计标题
+const monthLabel = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+})
+
+// 当年任务（不受列表筛选影响）
+const yearTasks = computed(() => {
+  const currentYear = new Date().getFullYear()
+  return taskList.value.filter(i => {
+    const d = new Date(i.create_time)
+    return d.getFullYear() === currentYear
+  })
+})
+
 // 计算统计数据
 const computeStats = computed(() => {
-  const list = filteredList.value
-  const now = Date.now()
+  const list = taskList.value
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
 
@@ -691,17 +795,22 @@ const computeStats = computed(() => {
   const d = new Date()
   today.value = `${d.getFullYear()}-${(d.getMonth() + 1 + '').padStart(2, 0)}-${(d.getDate() + '').padStart(2, 0)}`
 
-  // 总数统计
-  totalAll.value = list.length
-  totalDoing.value = list.filter(i => i.status === '进行中').length
-  totalWait.value = list.filter(i => i.status === '待启动').length
-  totalDone.value = list.filter(i => i.status === '已完成').length
+  // 当年统计：当年创建的任务，不受列表筛选影响
+  const yearList = yearTasks.value
 
-  // 超期任务：未完成 + 已过闭环时间
-  totalOverdue.value = list.filter(i => {
-    const isNotDone = i.status !== '已完成'
-    const isOver = new Date(i.close_time).getTime() < now
-    return isNotDone && isOver
+  // 总数统计
+  totalAll.value = yearList.length
+  totalDoing.value = yearList.filter(i => i.status === '进行中').length
+  totalWait.value = yearList.filter(i => i.status === '待启动').length
+  totalDone.value = yearList.filter(i => i.status === '已完成').length
+
+  // 超期任务：未完成 + 截止日期早于今天（截止当天不算超期）
+  totalOverdue.value = yearList.filter(i => {
+    if (i.status === '已完成' || !i.close_time) return false
+    const end = new Date(i.close_time)
+    if (isNaN(end.getTime())) return false
+    const endDate = `${end.getFullYear()}-${(end.getMonth() + 1 + '').padStart(2, 0)}-${(end.getDate() + '').padStart(2, 0)}`
+    return endDate < today.value
   }).length
 
   // 本月统计
@@ -713,16 +822,52 @@ const computeStats = computed(() => {
   monthDoing.value = monthList.filter(i => i.status === '进行中').length
   monthWait.value = monthList.filter(i => i.status === '待启动').length
   monthDone.value = monthList.filter(i => i.status === '已完成').length
+
+  // 本月工作量（人天）：跨月任务按活跃天数比例分摊到本月，保证 总工作量 = 产出 + 待完成
+  //   总     = workload × 本月份额
+  //   产出   = workload × 进度 × 本月份额（已完成任务进度视为 100%）
+  //   待完成 = 总 - 产出
+  const monthStart = new Date(currentYear, currentMonth, 1).getTime()
+  const monthEnd = new Date(currentYear, currentMonth + 1, 1).getTime()
+  const nowMs = Date.now()
+  const calcMonthShare = (i) => {
+    const start = new Date(i.create_time).getTime()
+    const end = i.status === '已完成' && i.finished_at ? new Date(i.finished_at).getTime() : nowMs
+    if (isNaN(start) || isNaN(end) || end <= start) return 0
+    const overlap = Math.max(0, Math.min(end, monthEnd) - Math.max(start, monthStart))
+    if (overlap <= 0) return 0
+    return overlap / (end - start)
+  }
+  let monthTotalWork = 0
+  let monthDoneWork = 0
+  for (const i of list) {
+    const workload = parseFloat(i.workload) || 0
+    if (workload <= 0) continue
+    const share = calcMonthShare(i)
+    if (share <= 0) continue
+    const progressFrac = i.status === '已完成' ? 1 : ((parseInt(i.progress) || 0) / 100)
+    monthTotalWork += workload * share
+    monthDoneWork += workload * progressFrac * share
+  }
+  monthWorkload.value = monthTotalWork.toFixed(1)
+  monthDoneWorkload.value = monthDoneWork.toFixed(1)
+  monthPendingWorkload.value = (monthTotalWork - monthDoneWork).toFixed(1)
+
+  // 饱和度：本月总工作量 ÷ 月容量（负荷评估）
+  // 人效比：已完成工作量 ÷ 本月已过去的天数（当天日期 - 月初1号 + 1，含今天）
+  saturation.value = Math.round(parseFloat(monthWorkload.value) / MONTH_CAPACITY * 100)
+  const elapsedDays = new Date().getDate()
+  efficiency.value = elapsedDays > 0 ? Math.round(parseFloat(monthDoneWorkload.value) / elapsedDays * 100) : 0
 })
 
 const totalWorkload = computed(() => {
-  return taskList.value.reduce((sum, item) => sum + (parseFloat(item.workload) || 0), 0).toFixed(1)
+  return yearTasks.value.reduce((sum, item) => sum + (parseFloat(item.workload) || 0), 0).toFixed(1)
 })
 
 const avgProgress = computed(() => {
-  const unfinished = taskList.value.filter(i => i.status !== '已完成')
-  if (unfinished.length === 0) return 0
-  return Math.round(unfinished.reduce((sum, i) => sum + (parseInt(i.progress) || 0), 0) / unfinished.length)
+  const list = yearTasks.value
+  if (list.length === 0) return 0
+  return Math.round(list.reduce((sum, i) => sum + (parseInt(i.progress) || 0), 0) / list.length)
 })
 
 const monthDoneRate = computed(() => {
@@ -819,6 +964,7 @@ watch(
 
 .progress-item .content {
   line-height: 1.4;
+  word-break: break-all;
 }
 
 .progress-item-body { display: flex; align-items: center; justify-content: space-between; }
@@ -863,6 +1009,90 @@ watch(
 .mobile-task-cards {
   display: none;
 }
+
+/* 统计栏卡片式布局 */
+.stats-bar {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stats-section {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 10px 16px;
+}
+
+.stats-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.stats-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  margin-top: 6px;
+  background: rgba(148, 163, 184, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 6px;
+}
+
+.stats-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-unit {
+  font-size: 11px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.stat-doing { color: #409eff; }
+.stat-wait { color: #909399; }
+.stat-done { color: #67c23a; }
+.stat-overdue { color: #f56c6c; }
+
+.stat-item-overdue {
+  padding: 1px 8px;
+  background: rgba(245, 108, 108, 0.1);
+  border: 1px solid rgba(245, 108, 108, 0.25);
+  border-radius: 4px;
+}
+
 @media (max-width: 768px) {
   .search-input {
     width: 130px !important;
@@ -947,9 +1177,14 @@ watch(
     border-top: 1px solid #334155;
   }
 
-  .stats-bar {
-    font-size: 12px !important;
-    line-height: 1.8 !important;
+  /* 手机端统计栏紧凑 */
+  .stats-bar { gap: 8px; }
+  .stats-section { padding: 10px 12px; }
+  .stats-grid { gap: 2px 16px; }
+  .stat-value { font-size: 14px; }
+
+  .stat-item-overdue {
+    padding: 1px 8px;
   }
 }
 </style>

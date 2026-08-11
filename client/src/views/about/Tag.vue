@@ -22,7 +22,7 @@
     <!-- 表格 -->
     <div class="table-box">
       <div class="table-container">
-      <el-table :data="tableData" border stripe>
+      <el-table :data="pageData" border stripe>
         <el-table-column label="序号" prop="serialNumber" width="60" align="center" />
         <el-table-column label="标签名称" prop="name" min-width="180" />
         <!-- 🔥 格式化时间：只显示年月日，隐藏时分秒 -->
@@ -39,7 +39,7 @@
 
     <!-- 手机端卡片列表 -->
     <div class="mobile-tag-cards">
-      <div v-for="item in tableData" :key="item.id" class="mobile-tag-card">
+      <div v-for="item in pageData" :key="item.id" class="mobile-tag-card">
         <div class="card-row">
           <span class="card-name">{{ item.name }}</span>
           <span class="card-time">{{ formatDate(item) }}</span>
@@ -78,7 +78,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -106,6 +106,12 @@ onMounted(() => {
 })
 
 const loading = ref(false) // 加载状态
+
+// 分页切片：根据当前页码/页大小截取 tableData
+const pageData = computed(() => {
+  const start = (pageNo.value - 1) * pageSize.value
+  return tableData.value.slice(start, start + pageSize.value)
+})
 
 /**
  * 🔥 时间格式化函数：只展示 年-月-日
@@ -137,6 +143,8 @@ const getList = async () => {
 
     tableData.value = filteredList
     total.value = filteredList.length
+    const maxPage = Math.max(1, Math.ceil(filteredList.length / pageSize.value))
+    if (pageNo.value > maxPage) pageNo.value = maxPage
 
   } catch (err) {
     console.error('获取标签列表失败：', err)

@@ -6,6 +6,10 @@
         <span class="mobile-tab-icon">🏢</span>
         <span class="mobile-tab-text">企业评估</span>
       </router-link>
+      <router-link to="/invest/research" class="mobile-tab-item">
+        <span class="mobile-tab-icon">📋</span>
+        <span class="mobile-tab-text">基本面研究</span>
+      </router-link>
       <router-link to="/invest/market" class="mobile-tab-item">
         <span class="mobile-tab-icon">📊</span>
         <span class="mobile-tab-text">大盘温度</span>
@@ -19,6 +23,12 @@
           <router-link to="/invest/enterprise" class="menu-item">
             <span class="icon">🏢</span>
             <span class="text">企业评估</span>
+          </router-link>
+        </li>
+        <li>
+          <router-link to="/invest/research" class="menu-item">
+            <span class="icon">📋</span>
+            <span class="text">基本面研究</span>
           </router-link>
         </li>
         <li>

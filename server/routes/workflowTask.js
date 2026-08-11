@@ -130,8 +130,8 @@ router.put('/workflow-tasks/:id', async (req, res) => {
     if (!tasks.length) {
       return res.status(404).json({ code: 404, message: '任务不存在' });
     }
-    if (tasks[0].status !== 0) {
-      return res.status(400).json({ code: 400, message: '仅待启动状态的任务可以编辑' });
+    if (tasks[0].status === 2) {
+      return res.status(400).json({ code: 400, message: '已完成的任务不可编辑' });
     }
 
     const conn = await req.db.getConnection();
@@ -144,17 +144,59 @@ router.put('/workflow-tasks/:id', async (req, res) => {
       );
 
       if (steps && steps.length) {
-        await conn.query('DELETE FROM workflow_step WHERE task_id = ?', [id]);
+        // 按序号就地更新步骤，保留已完成步骤的状态/进展/完成时间
+        const [existingSteps] = await conn.query(
+          'SELECT id, step_order FROM workflow_step WHERE task_id = ? ORDER BY step_order ASC',
+          [id]
+        );
         for (let i = 0; i < steps.length; i++) {
-          await conn.query(
-            'INSERT INTO workflow_step (task_id, step_order, name, guide, estimated_duration) VALUES (?, ?, ?, ?, ?)',
-            [id, i + 1, steps[i].name, steps[i].guide || null, steps[i].estimated_duration || null]
-          );
+          const order = i + 1;
+          const existing = existingSteps.find(s => s.step_order === order);
+          if (existing) {
+            await conn.query(
+              'UPDATE workflow_step SET name = ?, guide = ?, estimated_duration = ? WHERE id = ?',
+              [steps[i].name, steps[i].guide || null, steps[i].estimated_duration || null, existing.id]
+            );
+          } else {
+            await conn.query(
+              'INSERT INTO workflow_step (task_id, step_order, name, guide, estimated_duration, status) VALUES (?, ?, ?, ?, ?, 0)',
+              [id, order, steps[i].name, steps[i].guide || null, steps[i].estimated_duration || null]
+            );
+          }
         }
+        // 删除被移除的步骤
+        await conn.query(
+          'DELETE FROM workflow_step WHERE task_id = ? AND step_order > ?',
+          [id, steps.length]
+        );
         await conn.query(
           'UPDATE workflow_task SET total_steps = ? WHERE id = ?',
           [steps.length, id]
         );
+      }
+
+      // 进行中任务编辑后，重新对齐活动步骤（当前步骤被删除/重排时兜底）
+      if (tasks[0].status === 1) {
+        const [allSteps] = await conn.query(
+          'SELECT id, step_order, status FROM workflow_step WHERE task_id = ? ORDER BY step_order ASC',
+          [id]
+        );
+        const active = allSteps.find(s => s.status === 1);
+        if (active) {
+          await conn.query(
+            'UPDATE workflow_task SET current_step_order = ? WHERE id = ?',
+            [active.step_order, id]
+          );
+        } else {
+          const firstPending = allSteps.find(s => s.status === 0);
+          if (firstPending) {
+            await conn.query('UPDATE workflow_step SET status = 1 WHERE id = ?', [firstPending.id]);
+            await conn.query(
+              'UPDATE workflow_task SET current_step_order = ? WHERE id = ?',
+              [firstPending.step_order, id]
+            );
+          }
+        }
       }
 
       await conn.commit();

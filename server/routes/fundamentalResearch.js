@@ -59,9 +59,12 @@ router.post('/invest/research/create', async (req, res) => {
         } else {
             // 新建研究记录
             version = 'V1.0';
+            const [maxRow] = await req.db.query(
+                'SELECT COALESCE(MAX(sort_order), 0) AS max_sort FROM fundamental_research'
+            );
             const [result] = await req.db.query(
-                'INSERT INTO fundamental_research (company_name, company_code, current_version) VALUES (?, ?, ?)',
-                [companyName, companyCode || '', version]
+                'INSERT INTO fundamental_research (company_name, company_code, current_version, sort_order) VALUES (?, ?, ?, ?)',
+                [companyName, companyCode || '', version, maxRow[0].max_sort + 1]
             );
             researchId = result.insertId;
         }
@@ -112,7 +115,7 @@ router.post('/invest/research/create', async (req, res) => {
 router.post('/invest/research/:id/version', async (req, res) => {
     try {
         const { id } = req.params;
-        const { versionDesc, pros, cons, strategy, userNotes, industryItems, companyItems, summary, totalScore, industryScore, companyScore, targetPrice, sweetSpot } = req.body;
+        const { versionDesc, pros, cons, strategy, userNotes, industryItems, companyItems, summary, totalScore, industryScore, companyScore, targetPrice, sweetSpot, faq } = req.body;
 
         // 获取当前研究记录
         const [research] = await req.db.query(
@@ -141,12 +144,12 @@ router.post('/invest/research/:id/version', async (req, res) => {
                  company_name, company_code,
                  total_score, industry_score, company_score,
                  industry_items, company_items,
-                 pros, cons, target_price, sweet_spot, strategy, summary, user_notes)
+                 pros, cons, target_price, sweet_spot, strategy, summary, user_notes, faq)
              VALUES (?, ?, ?, 'manual',
                      ?, ?,
                      ?, ?, ?,
                      ?, ?,
-                     ?, ?, ?, ?, ?, ?, ?)`,
+                     ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 id, newVersion, versionDesc || '',
                 record.company_name, record.company_code,
@@ -159,7 +162,8 @@ router.post('/invest/research/:id/version', async (req, res) => {
                 sweetSpot ?? prev.sweet_spot ?? null,
                 strategy || prev.strategy || null,
                 summary || prev.summary || null,
-                userNotes || prev.user_notes || null
+                userNotes || prev.user_notes || null,
+                faq ? JSON.stringify(faq) : prev.faq || null
             ]
         );
 
@@ -189,8 +193,9 @@ router.get('/invest/research', async (req, res) => {
     try {
         const { keyword } = req.query;
         let sql = `
-            SELECT r.id, r.company_name, r.company_code, r.current_version,
-                   rv.total_score, rv.pros, rv.cons, r.updated_at
+            SELECT r.id, r.company_name, r.company_code, r.current_version, r.status,
+                   r.tags, rv.total_score, rv.pros, rv.cons, rv.strategy,
+                   rv.target_price, rv.sweet_spot, rv.user_notes, r.updated_at
             FROM fundamental_research r
             LEFT JOIN fundamental_research_version rv
                 ON rv.research_id = r.id AND rv.version = r.current_version
@@ -202,7 +207,7 @@ router.get('/invest/research', async (req, res) => {
             params.push(`%${keyword.trim()}%`);
         }
 
-        sql += ' ORDER BY r.updated_at DESC';
+        sql += " ORDER BY r.sort_order ASC, r.updated_at DESC";
 
         const [rows] = await req.db.query(sql, params);
 
@@ -212,9 +217,15 @@ router.get('/invest/research', async (req, res) => {
             companyName: row.company_name,
             companyCode: row.company_code,
             currentVersion: row.current_version,
+            status: row.status || '观察中',
+            tags: row.tags ? (typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags) : [],
             totalScore: row.total_score,
             pros: row.pros ? (typeof row.pros === 'string' ? JSON.parse(row.pros) : row.pros) : null,
             cons: row.cons ? (typeof row.cons === 'string' ? JSON.parse(row.cons) : row.cons) : null,
+            strategy: row.strategy,
+            targetPrice: row.target_price,
+            sweetSpot: row.sweet_spot,
+            userNotes: row.user_notes,
             updatedAt: row.updated_at
         }));
 
@@ -267,6 +278,8 @@ router.get('/invest/research/:id', async (req, res) => {
                 companyName: record.company_name,
                 companyCode: record.company_code,
                 currentVersion: record.current_version,
+                status: record.status || '观察中',
+                tags: record.tags ? (typeof record.tags === 'string' ? JSON.parse(record.tags) : record.tags) : [],
                 versions: versions.map(v => ({
                     version: v.version,
                     versionDesc: v.version_desc,
@@ -293,7 +306,10 @@ router.get('/invest/research/:id', async (req, res) => {
                     targetPrice: content.target_price,
                     sweetSpot: content.sweet_spot,
                     summary: content.summary,
-                    userNotes: content.user_notes
+                    userNotes: content.user_notes,
+                    faq: content.faq
+                        ? (typeof content.faq === 'string' ? JSON.parse(content.faq) : content.faq)
+                        : null
                 },
                 createdAt: record.created_at,
                 updatedAt: record.updated_at
@@ -350,7 +366,10 @@ router.get('/invest/research/:id/version/:version', async (req, res) => {
                 targetPrice: content.target_price,
                 sweetSpot: content.sweet_spot,
                 summary: content.summary,
-                userNotes: content.user_notes
+                userNotes: content.user_notes,
+                faq: content.faq
+                    ? (typeof content.faq === 'string' ? JSON.parse(content.faq) : content.faq)
+                    : null
             }
         });
     } catch (err) {
@@ -384,6 +403,112 @@ router.delete('/invest/research/:id', async (req, res) => {
 });
 
 // ======================================
+// 更新研究状态（观察中/持仓中）
+// POST /api/invest/research/:id/status
+// ======================================
+router.post('/invest/research/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['观察中', '持仓中'].includes(status)) {
+            return res.status(400).json({ code: 400, message: '无效的状态值' });
+        }
+
+        const [research] = await req.db.query('SELECT id FROM fundamental_research WHERE id = ?', [id]);
+        if (research.length === 0) {
+            return res.status(404).json({ code: 404, message: '研究记录不存在' });
+        }
+
+        await req.db.query('UPDATE fundamental_research SET status = ? WHERE id = ?', [status, id]);
+
+        logger.info(`[fundamentalResearch] 更新状态: id=${id}, status=${status}`);
+        res.json({ code: 0, message: '状态更新成功' });
+    } catch (err) {
+        logger.error('[fundamentalResearch] 更新状态失败', { error: err.message });
+        res.status(500).json({ code: 500, message: err.message });
+    }
+});
+
+// ======================================
+// 更新研究标签（观察中/持仓中的研究均可打标签）
+// POST /api/invest/research/:id/tags
+// ======================================
+router.post('/invest/research/:id/tags', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tagIds } = req.body;
+
+        const tagIdList = Array.isArray(tagIds) ? tagIds.map(Number).filter(n => !isNaN(n)) : [];
+
+        const [research] = await req.db.query('SELECT id FROM fundamental_research WHERE id = ?', [id]);
+        if (research.length === 0) {
+            return res.status(404).json({ code: 404, message: '研究记录不存在' });
+        }
+
+        await req.db.query('UPDATE fundamental_research SET tags = ? WHERE id = ?', [JSON.stringify(tagIdList), id]);
+
+        logger.info(`[fundamentalResearch] 更新标签: id=${id}, tags=${JSON.stringify(tagIdList)}`);
+        res.json({ code: 0, message: '标签更新成功' });
+    } catch (err) {
+        logger.error('[fundamentalResearch] 更新标签失败', { error: err.message });
+        res.status(500).json({ code: 500, message: err.message });
+    }
+});
+
+// ======================================
+// 调整卡片顺序（上移/下移）
+// POST /api/invest/research/:id/move
+// ======================================
+router.post('/invest/research/:id/move', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { direction } = req.body;
+
+        if (!['up', 'down'].includes(direction)) {
+            return res.status(400).json({ code: 400, message: '无效的方向' });
+        }
+
+        const [rows] = await req.db.query(
+            'SELECT id, sort_order FROM fundamental_research WHERE id = ?',
+            [id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ code: 404, message: '研究记录不存在' });
+        }
+        const current = rows[0];
+
+        let neighbor;
+        if (direction === 'up') {
+            const [n] = await req.db.query(
+                'SELECT id, sort_order FROM fundamental_research WHERE sort_order < ? ORDER BY sort_order DESC LIMIT 1',
+                [current.sort_order]
+            );
+            neighbor = n[0];
+        } else {
+            const [n] = await req.db.query(
+                'SELECT id, sort_order FROM fundamental_research WHERE sort_order > ? ORDER BY sort_order ASC LIMIT 1',
+                [current.sort_order]
+            );
+            neighbor = n[0];
+        }
+
+        if (!neighbor) {
+            return res.json({ code: 0, message: direction === 'up' ? '已在顶部' : '已在底部' });
+        }
+
+        await req.db.query('UPDATE fundamental_research SET sort_order = ? WHERE id = ?', [neighbor.sort_order, current.id]);
+        await req.db.query('UPDATE fundamental_research SET sort_order = ? WHERE id = ?', [current.sort_order, neighbor.id]);
+
+        logger.info(`[fundamentalResearch] 调整顺序: id=${id}, direction=${direction}`);
+        res.json({ code: 0, message: '顺序已调整' });
+    } catch (err) {
+        logger.error('[fundamentalResearch] 调整顺序失败', { error: err.message });
+        res.status(500).json({ code: 500, message: err.message });
+    }
+});
+
+// ======================================
 // 建表初始化
 // ======================================
 async function initTables(pool) {
@@ -394,6 +519,7 @@ async function initTables(pool) {
             company_name    VARCHAR(100) NOT NULL,
             company_code    VARCHAR(20) NOT NULL DEFAULT '',
             current_version VARCHAR(10) NOT NULL DEFAULT 'V1.0',
+            status          VARCHAR(20) DEFAULT '观察中',
             created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_company (company_name)
@@ -439,6 +565,27 @@ async function initTables(pool) {
         } catch (_) {}
         try {
             await connection.query('ALTER TABLE fundamental_research_version ADD COLUMN sweet_spot VARCHAR(100) DEFAULT NULL AFTER target_price');
+        } catch (_) {}
+
+        // 迁移：添加 status 列
+        try {
+            await connection.query("ALTER TABLE fundamental_research ADD COLUMN status VARCHAR(20) DEFAULT '观察中' AFTER current_version");
+        } catch (_) {}
+
+        // 迁移：添加 tags 列（公司级标签，JSON 数组存标签 ID）
+        try {
+            await connection.query('ALTER TABLE fundamental_research ADD COLUMN tags JSON DEFAULT NULL AFTER status');
+        } catch (_) {}
+
+        // 迁移：添加 faq 列（问答对，JSON 数组）
+        try {
+            await connection.query('ALTER TABLE fundamental_research_version ADD COLUMN faq JSON DEFAULT NULL AFTER user_notes');
+        } catch (_) {}
+
+        // 迁移：添加 sort_order 列（卡片手动排序，用 id 初始化保证唯一且按创建顺序）
+        try {
+            await connection.query('ALTER TABLE fundamental_research ADD COLUMN sort_order INT DEFAULT 0 AFTER status');
+            await connection.query('UPDATE fundamental_research SET sort_order = id WHERE sort_order = 0');
         } catch (_) {}
     } finally {
         connection.release();

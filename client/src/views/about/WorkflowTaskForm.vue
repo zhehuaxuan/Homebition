@@ -7,8 +7,8 @@
     <div v-if="loading" class="loading-text">加载中...</div>
 
     <template v-else>
-      <div v-if="isEdit && taskData.status !== 0" class="error-banner">
-        该任务已启动或已完成，无法编辑
+      <div v-if="isEdit && taskData.status === 2" class="error-banner">
+        该任务已完成，无法编辑
       </div>
 
       <el-form

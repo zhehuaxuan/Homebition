@@ -29,6 +29,7 @@ const mobileLinks = computed(() => {
     const links = [
         { path: '/', label: '首页', icon: '🏠' },
         { path: '/articles', label: '我的文章', icon: '📝' },
+        { href: '/algo/', label: '算法笔记', icon: '📚' },
         { path: '/invest', label: '投资频道', icon: '💰' },
     ]
     if (authStore.isLoggedIn()) {
@@ -58,6 +59,7 @@ onUnmounted(() => {
         <ul class="nav-links">
             <li><router-link to="/" @click="closeMenu">首页</router-link></li>
             <li><router-link to="/articles" @click="closeMenu">我的文章</router-link></li>
+            <li><a href="/algo/" target="_blank" rel="noopener" @click="closeMenu">算法笔记</a></li>
             <li><router-link to="/invest" @click="closeMenu">投资频道</router-link></li>
             <li v-if="authStore.isLoggedIn()"><router-link to="/tasks" @click="closeMenu">我的任务</router-link></li>
             <li v-if="authStore.isLoggedIn()"><router-link to="/about" @click="closeMenu">后台管理</router-link></li>
@@ -91,10 +93,16 @@ onUnmounted(() => {
                 <span class="close-line"></span>
                 <span class="close-line"></span>
             </button>
-            <router-link v-for="link in mobileLinks" :key="link.path" :to="link.path" class="mobile-menu-item" @click="closeMenu">
-                <span class="mobile-menu-icon">{{ link.icon }}</span>
-                <span>{{ link.label }}</span>
-            </router-link>
+            <template v-for="link in mobileLinks" :key="link.label">
+                <a v-if="link.href" :href="link.href" target="_blank" rel="noopener" class="mobile-menu-item" @click="closeMenu">
+                    <span class="mobile-menu-icon">{{ link.icon }}</span>
+                    <span>{{ link.label }}</span>
+                </a>
+                <router-link v-else :to="link.path" class="mobile-menu-item" @click="closeMenu">
+                    <span class="mobile-menu-icon">{{ link.icon }}</span>
+                    <span>{{ link.label }}</span>
+                </router-link>
+            </template>
             <div v-if="authStore.isLoggedIn()" class="mobile-menu-item mobile-logout" @click="authStore.setLogout(); closeMenu(); $router.push('/')">
                 <span class="mobile-menu-icon">🚪</span>
                 <span>退出登录</span>

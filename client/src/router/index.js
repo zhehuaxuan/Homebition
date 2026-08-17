@@ -138,6 +138,11 @@ const routes = [
         component: () => import('../views/invest/Market.vue')
       },
       {
+        path: 'industry',
+        name: 'Industry',
+        component: () => import('../views/invest/Industry.vue')
+      },
+      {
         path: 'research',
         name: 'ResearchList',
         component: () => import('../views/invest/ResearchList.vue')

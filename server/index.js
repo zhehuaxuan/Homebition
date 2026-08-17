@@ -78,6 +78,8 @@ const flashIdeasRouter = require('./routes/flashIdeas');
 app.use('/api', flashIdeasRouter);
 const workflowTaskRouter = require('./routes/workflowTask');
 app.use('/api', workflowTaskRouter);
+const industryRouter = require('./routes/industry');
+app.use('/api', industryRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {
@@ -103,6 +105,15 @@ dailySummaryRouter.initDailySummaryTable(pool);
 
 // 8.7 初始化基本面研究表
 fundamentalResearchRouter.initTables(pool);
+
+// 8.8 初始化看行业：建表 + 盘后采集定时器（仅采集当日，不做历史回填）
+const industryService = require('./services/industry');
+(async () => {
+    await industryService.initTables(pool);
+    industryService.initDailyCollector(pool);
+})().catch(err => {
+    logger.error('[industry] 初始化失败', { error: err.message });
+});
 
 // 7. 初始化邮件服务
 const mailConfig = require('./config/mail');

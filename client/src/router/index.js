@@ -27,6 +27,11 @@ const routes = [
     component: () => import('../views/MyTasks.vue')
   },
   {
+    path: '/knowledge-map',
+    name: 'KnowledgeMap',
+    component: () => import('../views/about/KnowledgeMap.vue')
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import('../views/About.vue'),
@@ -94,6 +99,10 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/about/Dashboard.vue')
+      },{
+        path: 'knowledge-map-admin',
+        name: 'KnowledgeMapAdmin',
+        component: () => import('../views/about/KnowledgeMapAdmin.vue')
       },{
         path: 'review-config',
         name: 'ReviewConfig',

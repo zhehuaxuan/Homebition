@@ -80,6 +80,8 @@ const workflowTaskRouter = require('./routes/workflowTask');
 app.use('/api', workflowTaskRouter);
 const industryRouter = require('./routes/industry');
 app.use('/api', industryRouter);
+const knowledgeMapRouter = require('./routes/knowledgeMap');
+app.use('/api', knowledgeMapRouter);
 
 // 5.5 全局错误处理中间件（必须在路由之后）
 app.use((err, req, res, next) => {
@@ -114,6 +116,9 @@ const industryService = require('./services/industry');
 })().catch(err => {
     logger.error('[industry] 初始化失败', { error: err.message });
 });
+
+// 8.9 初始化知识地图表（校验存在性）
+knowledgeMapRouter.initTable(pool);
 
 // 7. 初始化邮件服务
 const mailConfig = require('./config/mail');

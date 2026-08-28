@@ -117,6 +117,7 @@ const menuGroups = [
     label: '内容管理',
     children: [
       { to: '/about/article-list', label: '文章清单', icon: '📄' },
+      { to: '/about/knowledge-map-admin', label: 'AI Agent 管理', icon: '🗺️' },
       { to: '/about/tag-list', label: '标签管理', icon: '🏷' },
       { to: '/exam/', label: '考试管理', icon: '📝', external: true },
     ],
@@ -148,6 +149,7 @@ const tabLabels = {
   '/about/profile': '关于我',
   '/about/devices': '设备',
   '/about/article-list': '文章',
+  '/about/knowledge-map-admin': 'AI Agent',
   '/about/tag-list': '标签',
   '/about/task-list': '任务',
   '/about/subscription-list': '订阅',

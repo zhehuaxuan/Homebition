@@ -33,6 +33,7 @@ const mobileLinks = computed(() => {
         { path: '/invest', label: '投资频道', icon: '💰' },
     ]
     if (authStore.isLoggedIn()) {
+        links.push({ path: '/knowledge-map', label: 'AI Agent', icon: '🗺️' })
         links.push({ path: '/tasks', label: '我的任务', icon: '✅' })
         links.push({ path: '/about', label: '后台管理', icon: '⚙️' })
     }
@@ -60,6 +61,7 @@ onUnmounted(() => {
             <li><router-link to="/" @click="closeMenu">首页</router-link></li>
             <li><router-link to="/articles" @click="closeMenu">我的文章</router-link></li>
             <li><a href="/algo/" target="_blank" rel="noopener" @click="closeMenu">算法笔记</a></li>
+            <li v-if="authStore.isLoggedIn()"><router-link to="/knowledge-map" @click="closeMenu">AI Agent</router-link></li>
             <li><router-link to="/invest" @click="closeMenu">投资频道</router-link></li>
             <li v-if="authStore.isLoggedIn()"><router-link to="/tasks" @click="closeMenu">我的任务</router-link></li>
             <li v-if="authStore.isLoggedIn()"><router-link to="/about" @click="closeMenu">后台管理</router-link></li>
